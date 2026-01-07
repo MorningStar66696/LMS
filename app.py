@@ -17,7 +17,7 @@ load_dotenv()
 DB_USER = os.getenv("SUPABASE_DB_USER")
 DB_PASSWORD = os.getenv("SUPABASE_DB_PASSWORD")
 DB_HOST = os.getenv("SUPABASE_DB_HOST")
-DB_PORT = os.getenv("SUPABASE_DB_PORT")
+DB_PORT = os.getenv("SUPABASE_DB_PORT", "5432")
 DB_NAME = os.getenv("SUPABASE_DB_NAME")
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-PdJWriOifyJHWBqf7YIKZiKq7nQ1AnQD-o8oRd0pVVDxs1OIH4m3kqmlig5nOeaM/exec"
 def get_connection():
