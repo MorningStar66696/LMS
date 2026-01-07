@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CRM Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0c1024;
+  --panel:#141933;
+  --panel-soft:#1a1f3f;
+  --accent:#4c6fff;
+  --text:#f1f3f9;
+  --muted:#b7bddb;
+  --border:#2a2f55;
+  --hover:#20255a;
+  --row-alt:#161c3d;
+  --row-odd:#151a3a;
+  --row-even:#1b2150;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui;
+}
+
+/* LEFT FILTER PANEL */
+.filter-panel{
+  background:var(--panel);
+  height:100vh;
+  overflow-y:auto;
+  border-right:1px solid var(--border);
+  padding:20px;
+}
+
+.filter-title{
+  font-size:17px;
+  font-weight:600;
+  margin-bottom:14px;
+}
+
+/* FILTER CARD */
+.filter-card{
+  background:var(--panel-soft);
+  border-radius:8px;
+  margin-bottom:10px;
+  border:1px solid var(--border);
+}
+
+.filter-header{
+  padding:10px 12px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.filter-header:hover{
+  background:var(--hover);
+}
+
+.filter-body{
+  display:none;
+  padding:10px;
+  max-height:240px;
+  overflow-y:auto;
+  border-top:1px solid var(--border);
+}
+
+.filter-search{
+  background:#0e1330;
+  color:var(--text);
+  border:1px solid var(--border);
+  margin-bottom:8px;
+  border-radius:5px;
+  font-size:13px;
+}
+
+/* CHECKBOX */
+.form-check{
+  margin-bottom:6px;
+}
+
+.form-check-label{
+  font-size:12.5px;
+}
+
+.form-check-input{
+  background:#0e1330;
+  border:1px solid var(--accent);
+}
+
+.form-check-input:checked{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+
+/* MAIN CONTENT */
+.main-content{
+  padding:22px;
+}
+
+/* STATS */
+.stat-box{
+  background:var(--panel-soft);
+  border-radius:10px;
+  padding:14px;
+  border:1px solid var(--border);
+}
+
+.stat-box h4{
+  margin:0;
+  font-weight:600;
+  font-size:18px;
+}
+
+.stat-box .text-muted{
+  color:var(--muted)!important;
+  font-size:12px;
+}
+
+/* TABLE */
+.table-wrapper{
+  background:var(--panel);
+  border-radius:10px;
+  border:1px solid var(--border);
+  max-height:65vh;
+  overflow:auto;
+}
+
+table{
+  min-width:1600px;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+thead th{
+  position: sticky;
+  top: 0;
+  background:#1a2045;
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:10px 12px;
+  border-bottom: 2px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+table{
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+tbody tr:nth-child(even){
+  background:var(--row-alt);
+}
+tbody tr:hover{
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+td{
+  font-size:13px;
+  padding:10px 12px;
+  white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+/* COLUMN SEPARATORS */
+thead th,
+tbody td{
+  border-right: 1px solid var(--border);
+}
+/* CENTER ALIGN TABLE DATA */
+thead th,
+tbody td{
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* remove last column right border */
+thead th:last-child,
+tbody td:last-child{
+  border-right: none;
+}
+/* PAGINATION BAR */
+.pagination-bar{
+  position:sticky;
+  bottom:0;
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  padding:10px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+}
+/* PAGINATION INFO VISIBILITY FIX */
+.pagination-bar .text-muted{
+  color: #e6e9ff !important;   /* brighter */
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.page-link{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text);
+  font-size:12px;
+}
+
+.page-item.active .page-link{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.filter-actions{
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  padding-bottom: 12px;
+  z-index: 10;
+}
+
+</style>
+</head>
+
+<body>
+
+{% set last_page = (total // limit) + (1 if total % limit else 0) %}
+
+<div class="container-fluid">
+  <div class="row">
+
+    <!-- FILTER PANEL -->
+    <div class="col-md-3 filter-panel">
+      <div class="filter-title">Filters</div>
+    
+      <form method="get">
+        <!-- STICKY ACTION BUTTONS -->
+        <div class="filter-actions mb-3">
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">
+              Apply Filters
+            </button>
+            <a href="/" class="btn btn-outline-light">
+              Clear
+            </a>
+          </div>
+        </div>
+    
+        <input class="form-control mb-3"
+               name="search"
+               value="{{ search }}"
+               placeholder="Search all columns">
+    
+        {% for h in filter_options.keys() %}
+        <div class="filter-card">
+          <div class="filter-header" onclick="toggleFilter('{{ loop.index }}')">
+            {{ h }}
+            <i class="bi bi-chevron-down"></i>
+          </div>
+    
+          <div class="filter-body"
+     id="filter{{ loop.index }}"
+     onclick="event.stopPropagation()">
+            {% if filter_options.get(h) %}
+              <input class="form-control filter-search"
+                     placeholder="Search {{ h }}"
+                     onkeyup="filterOptions(this)">
+             {% for v in filter_options[h] %}
+<div class="form-check">
+  <input
+    class="form-check-input"
+    type="checkbox"
+    id="filter_{{ h }}_{{ loop.index }}"
+    name="filter_{{ h }}"
+    value="{{ v }}"
+    {% if v in selected_filters.get(h, []) %}checked{% endif %}
+  >
+  <label
+    class="form-check-label"
+    for="filter_{{ h }}_{{ loop.index }}"
+  >
+    {{ v }}
+  </label>
+</div>
+{% endfor %}
+            {% else %}
+              <div class="text-muted small">No values</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </form>
+    </div>
+
+    <!-- MAIN -->
+    <div class="col-md-9 main-content">
+      <!-- TOP RIGHT ACTION BAR -->
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+
+        <div class="d-flex gap-2">
+          <a href="/analytics" class="btn btn-outline-info btn-sm">
+            📊 Analytics
+          </a>
+      
+          <!-- SAVE VIEW -->
+          <button class="btn btn-outline-light btn-sm"
+                  onclick="saveCurrentView()">
+            💾 Save View
+          </button>
+      
+          <!-- SAVED VIEWS DROPDOWN -->
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle"
+                    data-bs-toggle="dropdown">
+              📂 Saved Views
+            </button>
+      
+            <div class="dropdown-menu p-2"
+                 id="savedViewsMenu"
+                 onclick="event.stopPropagation()">
+              <div class="text-muted small px-2">No saved views</div>
+            </div>
+          </div>
+      
+          <!-- COLUMNS -->
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle"
+                    data-bs-toggle="dropdown">
+              ⚙ Columns
+            </button>
+      
+            <div class="dropdown-menu p-3"
+                 style="max-height:300px;overflow:auto"
+                 onclick="event.stopPropagation()">
+      
+              {% for h in headers %}
+              <div class="form-check">
+                <input
+                class="form-check-input column-toggle"
+                type="checkbox"
+                id="col_toggle_{{ loop.index0 }}"
+                data-col="{{ loop.index0 }}"
+                {% if h != '__ctid' %}checked{% endif %}>
+                <label class="form-check-label small"
+                       for="col_toggle_{{ loop.index0 }}">
+                  {{ h }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+      
+        </div>
+      
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('download') }}?{{ request.query_string.decode() }}"
+             class="btn btn-success btn-sm">
+            <i class="bi bi-download"></i> Download CSV
+          </a>
+        
+          <button class="btn btn-warning btn-sm"
+                  onclick="downloadSelected()">
+            ⬇️ Download Selected
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-success btn-sm"
+        onclick="openSheetModal()">
+  📤 Send to Google Sheet
+</button>
+
+      <!-- STATS -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="stat-box">
+            <div class="text-muted">Total Leads</div>
+            <h4>{{ total }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-box">
+            <div class="text-muted">Page</div>
+            <h4>{{ page }} / {{ last_page }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-box">
+            <div class="text-muted">Showing</div>
+            <h4>{{ data|length }}</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrapper">
+        <table class="table table-dark table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px">
+                <input type="checkbox" id="selectAll">
+              </th>
+              {% for h in headers %}
+                <th data-col="{{ loop.index0 }}">{{ h }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+      
+
+            <tbody>
+              {% for row in data %}
+              <tr>
+                <td>
+                  <input
+                    type="checkbox"
+                    class="row-select"
+                    value="{{ row['__ctid'] }}"
+                </td>
+            
+                {% for h in headers %}
+                  <td data-col="{{ loop.index0 }}">{{ row[h] }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination-bar">
+        <div class="text-muted">
+          Showing {{ (page-1)*limit + 1 }} –
+          {{ (page-1)*limit + data|length }} of {{ total }}
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+          <a class="btn btn-sm btn-outline-light {% if page==1 %}disabled{% endif %}" href="?page=1">First</a>
+          <a class="btn btn-sm btn-outline-light {% if page==1 %}disabled{% endif %}" href="?page={{ page-1 }}">Prev</a>
+
+          <form method="get" id="limitForm" class="d-flex align-items-center gap-2">
+
+            {# preserve existing query params #}
+            {% for k, v in request.args.items() %}
+              {% if k != 'limit' and k != 'page' %}
+                <input type="hidden" name="{{ k }}" value="{{ v }}">
+              {% endif %}
+            {% endfor %}
+          
+            <span class="text-muted">Rows:</span>
+          
+            <select name="limit"
+                    class="form-select form-select-sm"
+                    style="width:90px"
+                    onchange="this.form.submit()">
+          
+              {% for l in [25,50,100,200] %}
+                <option value="{{ l }}" {% if limit == l %}selected{% endif %}>
+                  {{ l }}
+                </option>
+              {% endfor %}
+            </select>
+          </form>
+
+          <a class="btn btn-sm btn-outline-light {% if page==last_page %}disabled{% endif %}" href="?page={{ page+1 }}">Next</a>
+          <a class="btn btn-sm btn-outline-light {% if page==last_page %}disabled{% endif %}" href="?page={{ last_page }}">Last</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        cb.addEventListener("change", function () {
+          toggleColumn(this.dataset.col, this.checked);
+          saveColumnPrefs();
+        });
+      });
+    
+      loadColumnPrefs();
+    
+      // 🔥 FORCE HIDE __ctid BY DEFAULT (FIRST LOAD)
+      {% for h in headers %}
+        {% if h == "__ctid" %}
+          toggleColumn({{ loop.index0 }}, false);
+        {% endif %}
+      {% endfor %}
+    });
+    
+    function toggleColumn(colIndex, show) {
+      document
+        .querySelectorAll(`[data-col='${colIndex}']`)
+        .forEach(el => {
+          el.style.display = show ? "" : "none";
+        });
+    }
+    
+    function saveColumnPrefs() {
+      const prefs = {};
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        prefs[cb.dataset.col] = cb.checked;
+      });
+      localStorage.setItem("columnPrefs", JSON.stringify(prefs));
+    }
+    
+    function loadColumnPrefs() {
+      const prefs = JSON.parse(localStorage.getItem("columnPrefs") || "{}");
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        if (prefs.hasOwnProperty(cb.dataset.col)) {
+          cb.checked = prefs[cb.dataset.col];
+          toggleColumn(cb.dataset.col, cb.checked);
+        }
+      });
+    }
+    </script>
+    <script>
+      function getSavedViews() {
+        return JSON.parse(localStorage.getItem("savedViews") || "{}");
+      }
+      
+      function saveViews(views) {
+        localStorage.setItem("savedViews", JSON.stringify(views));
+      }
+      
+      function saveCurrentView() {
+        const name = prompt("Enter view name (e.g. Delhi MBA Leads)");
+        if (!name) return;
+      
+        const views = getSavedViews();
+        views[name] = window.location.search || "?";
+      
+        saveViews(views);
+        renderSavedViews();
+      }
+      
+      function loadView(query) {
+        window.location.href = query;
+      }
+      
+      function deleteView(name) {
+        const views = getSavedViews();
+        delete views[name];
+        saveViews(views);
+        renderSavedViews();
+      }
+      
+      function renderSavedViews() {
+        const views = getSavedViews();
+        const menu = document.getElementById("savedViewsMenu");
+      
+        menu.innerHTML = "";
+      
+        if (Object.keys(views).length === 0) {
+          menu.innerHTML =
+            '<div class="text-muted small px-2">No saved views</div>';
+          return;
+        }
+      
+        Object.entries(views).forEach(([name, query]) => {
+          const item = document.createElement("div");
+          item.className =
+            "d-flex justify-content-between align-items-center dropdown-item";
+      
+          item.innerHTML = `
+            <span style="cursor:pointer" onclick="loadView('${query}')">
+              ${name}
+            </span>
+            <i class="bi bi-trash text-danger"
+               style="cursor:pointer"
+               onclick="deleteView('${name}')"></i>
+          `;
+      
+          menu.appendChild(item);
+        });
+      }
+      
+      document.addEventListener("DOMContentLoaded", renderSavedViews);
+      </script>
+      <script>
+        function toggleFilter(id) {
+          const el = document.getElementById("filter" + id);
+          if (!el) return;
+        
+          // Close other open filters (optional, but clean UX)
+          document.querySelectorAll(".filter-body").forEach(b => {
+            if (b !== el) b.style.display = "none";
+          });
+        
+          // Toggle current
+          el.style.display = (el.style.display === "block") ? "none" : "block";
+        }
+        </script>
+        <script>
+          document.getElementById("selectAll")?.addEventListener("change", function () {
+            document.querySelectorAll(".row-select").forEach(cb => {
+              cb.checked = this.checked;
+            });
+          });
+          
+          function downloadSelected() {
+            const ids = Array.from(
+              document.querySelectorAll(".row-select:checked")
+            ).map(cb => cb.value);
+          
+            if (ids.length === 0) {
+              alert("Select at least one row");
+              return;
+            }
+          
+            const params = new URLSearchParams();
+            ids.forEach(id => params.append("ids", id));
+          
+            window.location.href = "/download-selected?" + params.toString();
+          }
+          </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- GOOGLE SHEET MODAL -->
+<div class="modal fade" id="sheetModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Send Selected Leads to Google Sheet</h5>
+        <button type="button" class="btn-close btn-close-white"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- SHEET URL -->
+        <div class="mb-3">
+          <label class="form-label">Google Sheet URL</label>
+          <input type="text" id="sheetUrl"
+                 class="form-control"
+                 placeholder="https://docs.google.com/spreadsheets/...">
+        </div>
+
+        <!-- HEADER MAPPING -->
+        <label class="form-label">Field Mapping</label>
+
+        <div id="mappingContainer">
+          <div class="row g-2 mapping-row mb-2">
+            <div class="col">
+              <select class="form-select table-field">
+                {% for h in headers %}
+                <option value="{{ h }}">{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col">
+              <input class="form-control sheet-field"
+                     placeholder="Sheet Header Name">
+              <div class="form-check mt-1">
+                <input class="form-check-input dedupe-check" type="checkbox">
+                <label class="form-check-label small">
+                  Prevent duplicate
+                </label>
+              </div>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-danger"
+                      onclick="removeMapping(this)">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-outline-light btn-sm"
+                onclick="addMappingRow()">
+          ➕ Add Mapping
+        </button>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary"
+                data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success"
+                onclick="sendToSheet()">Send</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function openSheetModal(){
+    const modal = new bootstrap.Modal(
+      document.getElementById("sheetModal")
+    );
+    modal.show();
+  }
+  
+  function addMappingRow(){
+    const container = document.getElementById("mappingContainer");
+  
+    const row = document.createElement("div");
+    row.className = "row g-2 mapping-row mb-2";
+  
+    row.innerHTML = `
+  <div class="col">
+    <select class="form-select table-field">
+      ${[...document.querySelectorAll(".table-field option")]
+        .map(o => `<option value="${o.value}">${o.value}</option>`).join("")}
+    </select>
+  </div>
+
+  <div class="col">
+    <input class="form-control sheet-field"
+           placeholder="Sheet Header Name">
+    <div class="form-check mt-1">
+      <input class="form-check-input dedupe-check" type="checkbox">
+      <label class="form-check-label small">
+        Prevent duplicate
+      </label>
+    </div>
+  </div>
+
+  <div class="col-auto">
+    <button class="btn btn-danger"
+            onclick="removeMapping(this)">✕</button>
+  </div>
+`;
+  
+    container.appendChild(row);
+  }
+  
+  function removeMapping(btn){
+    btn.closest(".mapping-row").remove();
+  }
+  
+  function sendToSheet(){
+  
+    const sheetUrl = document.getElementById("sheetUrl").value.trim();
+    if(!sheetUrl){
+      alert("Paste Google Sheet URL");
+      return;
+    }
+  
+    const selectedIds = Array.from(
+      document.querySelectorAll(".row-select:checked")
+    ).map(cb => cb.value);
+  
+    if(selectedIds.length === 0){
+      alert("Select at least one row");
+      return;
+    }
+  
+    const mappings = [];
+    document.querySelectorAll(".mapping-row").forEach(row => {
+      const tableField = row.querySelector(".table-field").value;
+      const sheetField = row.querySelector(".sheet-field").value.trim();
+      if(sheetField){
+        const dedupe = row.querySelector(".dedupe-check").checked;
+
+        mappings.push({
+          tableField,
+          sheetField,
+          dedupe
+        });
+      }
+    });
+  
+    if(mappings.length === 0){
+      alert("Add at least one mapping");
+      return;
+    }
+  
+    fetch("/send-to-sheet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sheetUrl,
+        ctids: selectedIds,
+        mappings
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      alert(res.message || "Data sent");
+    })
+    .catch(err => {
+      alert("Error sending data");
+      console.error(err);
+    });
+  }
+  </script>
+  
+</body>
+</html>

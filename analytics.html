@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Analytics Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    :root {
+        --bg: #0c1024;
+        --sidebar: #0f1430;
+        --panel: #141933;
+        --panel-soft: #1a1f3f;
+        --accent: #4c6fff;
+        --accent-soft: rgba(76,111,255,.15);
+        --text: #f1f3ff;
+        --muted: #aeb4d6;
+        --border: #2a2f55;
+      }
+      
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, -apple-system;
+      }
+      
+      /* ================= SIDEBAR ================= */
+      /* SIDEBAR */
+      .sidebar {
+        background: var(--sidebar);
+        min-height: 100vh;
+        transition: width .25s ease;
+        overflow: hidden;
+        border-right: 1px solid var(--border);
+      }
+      
+      /* Expanded */
+      .sidebar.expanded {
+        width: 220px;
+      }
+      
+      /* Collapsed */
+      .sidebar.collapsed {
+        width: 64px;
+      }
+      
+      .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 12px;
+      }
+      
+      .brand {
+        font-weight: 700;
+        letter-spacing: .5px;
+      }
+      
+      .toggle-btn {
+        background: none;
+        border: none;
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      
+      .sidebar .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        color: var(--muted);
+        border-radius: 8px;
+        margin: 6px 10px;
+        transition: all .2s ease;
+      }
+      
+      .sidebar .nav-link i {
+        font-size: 18px;
+      }
+      
+      /* Hide text when collapsed */
+      .sidebar.collapsed .link-text,
+      .sidebar.collapsed .brand {
+        display: none;
+      }
+      
+      .sidebar .nav-link:hover {
+        background: var(--panel-soft);
+        color: var(--text);
+      }
+      
+      .sidebar .nav-link.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+      
+      /* MAIN CONTENT SHIFT */
+      .main-content {
+        transition: margin-left .25s ease;
+      }
+      
+      /* ================= CARDS ================= */
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel-soft));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        transition: transform .2s ease, box-shadow .2s ease;
+      }
+      
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      }
+      
+      .card h6 {
+        color: var(--text);
+        font-weight: 600;
+        font-size: 14.5px;
+        margin-bottom: 14px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+        letter-spacing: .3px;
+      }
+      
+      /* ================= INSIGHTS ================= */
+      .insight-box {
+        background: linear-gradient(135deg, #1a1f3f, #141933);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      }
+      
+      .insight-box b {
+        color: var(--accent);
+      }
+      
+      /* ================= CHART CANVAS ================= */
+      canvas {
+        margin-top: 10px;
+      }
+      
+      /* ================= RESPONSIVE ================= */
+      @media (max-width: 768px) {
+        .sidebar {
+          min-height: auto;
+        }
+      }
+</style>
+</head>
+
+<body>
+<div class="container-fluid">
+  <div class="row">
+
+    <!-- SIDEBAR -->
+
+<div id="sidebar" class="col-auto sidebar expanded">
+    <div class="sidebar-header">
+      <span class="brand">CRM</span>
+      <button id="toggleSidebar" class="toggle-btn">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </div>
+  
+    <a href="/" class="nav-link">
+      <i class="bi bi-house"></i>
+      <span class="link-text">Home</span>
+    </a>
+  
+    <a href="/analytics" class="nav-link active">
+      <i class="bi bi-graph-up"></i>
+      <span class="link-text">Analytics</span>
+    </a>
+  </div>
+
+
+  
+  <div id="mainContent" class="col main-content">
+    <!-- MAIN -->
+    <div class="col-md-10 p-4">
+
+        <h3 class="mb-4 main-title">📊 Analytics Dashboard</h3>
+
+        <div class="row g-4">
+
+            <!-- Leads Per Day -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Leads Per Day</h6>
+                <canvas id="leadsPerDay"></canvas>
+              </div>
+            </div>
+          
+            <!-- Top Sources -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Top Sources</h6>
+                <canvas id="sourceChart"></canvas>
+              </div>
+            </div>
+          
+            <!-- Insights (FULL WIDTH) -->
+            <div class="col-12">
+              <div class="insight-box" id="insightBox">
+                ⏳ Generating insights...
+              </div>
+            </div>
+          
+            <!-- Country Distribution -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Country Distribution</h6>
+                <canvas id="countryChart"></canvas>
+              </div>
+            </div>
+          
+            <!-- Top Courses -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Top Courses (This Month)</h6>
+                <canvas id="courseMonthChart"></canvas>
+              </div>
+            </div>
+          
+            <!-- Top Campaigns -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Top Campaigns</h6>
+                <canvas id="campaignChart"></canvas>
+              </div>
+            </div>
+          
+            <!-- Top Ad Sets -->
+            <div class="col-12 col-md-6">
+              <div class="card p-3">
+                <h6>Top Ad Sets</h6>
+                <canvas id="adsetChart"></canvas>
+              </div>
+            </div>
+          
+          </div>
+
+    </div>
+  </div>
+</div>
+</div>
+<script>
+    fetch("/api/analytics")
+      .then(res => res.json())
+      .then(data => {
+    
+        // 📅 Leads by Month
+        new Chart(document.getElementById("leadsPerDay"), {
+          type: "line",
+          data: {
+            labels: data.leads_by_month.map(r => r[0]),
+            datasets: [{
+              label: "Leads per Month",
+              data: data.leads_by_month.map(r => r[1]),
+              borderColor: "#4c6fff",
+              tension: 0.4
+            }]
+          }
+        });
+    
+        // 📘 Top Courses (Pie)
+        new Chart(document.getElementById("countryChart"), {
+          type: "pie",
+          data: {
+            labels: data.top_courses.map(r => r[0]),
+            datasets: [{
+              data: data.top_courses.map(r => r[1])
+            }]
+          }
+        });
+    
+        // 📣 Sources (Bar)
+        new Chart(document.getElementById("sourceChart"), {
+          type: "bar",
+          data: {
+            labels: data.sources.map(r => r[0]),
+            datasets: [{
+              label: "Leads",
+              data: data.sources.map(r => r[1]),
+              backgroundColor: "#6f8cff"
+            }]
+          }
+        });
+        new Chart(document.getElementById("courseMonthChart"), {
+            type: "bar",
+            data: {
+              labels: data.top_courses_month.map(r => r[0]),
+              datasets: [{
+                label: "Leads",
+                data: data.top_courses_month.map(r => r[1]),
+                backgroundColor: "#4c6fff"
+              }]
+            }
+          });
+          new Chart(document.getElementById("campaignChart"), {
+            type: "bar",
+            data: {
+              labels: data.top_campaigns.map(r => r[0]),
+              datasets: [{
+                label: "Leads",
+                data: data.top_campaigns.map(r => r[1]),
+                backgroundColor: "#6f8cff"
+              }]
+            }
+          });
+
+          new Chart(document.getElementById("adsetChart"), {
+            type: "bar",
+            options: { indexAxis: 'y' },
+            data: {
+              labels: data.top_adsets.map(r => r[0]),
+              datasets: [{
+                label: "Leads",
+                data: data.top_adsets.map(r => r[1]),
+                backgroundColor: "#ffb703"
+              }]
+            }
+          });
+          const insightBox = document.getElementById("insightBox");
+
+// 🔥 Insight 1: Top Course
+let insight1 = "";
+if (data.insights.top_course_month) {
+  insight1 = `🔥 <b>${data.insights.top_course_month[0]}</b> generated the highest leads this month
+  (${data.insights.top_course_month[1]} leads).`;
+}
+
+// 📣 Insight 2: Source comparison
+let insight2 = "";
+if (data.insights.top_sources_compare.length === 2) {
+  const [top, second] = data.insights.top_sources_compare;
+  const diff = Math.round(((top[1] - second[1]) / second[1]) * 100);
+  insight2 = `📣 <b>${top[0]}</b> outperformed <b>${second[0]}</b> by ${diff}% in lead generation.`;
+}
+
+// 🌍 Insight 3: Country dominance
+let insight3 = "";
+if (data.insights.country_for_course) {
+  insight3 = `🌍 <b>${data.insights.country_for_course[0]}</b> dominates <b>${data.insights.top_course_month[0]}</b>
+  demand (${data.insights.country_for_course[1]} leads).`;
+}
+
+// 🎯 Render insights
+insightBox.innerHTML = [insight1, insight2, insight3].join("<br>");
+    
+      });
+    </script>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const sidebar = document.getElementById("sidebar");
+          const toggleBtn = document.getElementById("toggleSidebar");
+          const icon = toggleBtn.querySelector("i");
+        
+          // Restore state
+          if (localStorage.getItem("sidebar") === "collapsed") {
+            sidebar.classList.remove("expanded");
+            sidebar.classList.add("collapsed");
+            icon.classList.replace("bi-chevron-left", "bi-chevron-right");
+          }
+        
+          toggleBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("collapsed");
+            sidebar.classList.toggle("expanded");
+        
+            const isCollapsed = sidebar.classList.contains("collapsed");
+            localStorage.setItem("sidebar", isCollapsed ? "collapsed" : "expanded");
+        
+            icon.classList.toggle("bi-chevron-left");
+            icon.classList.toggle("bi-chevron-right");
+          });
+        });
+        </script>
+    
+</body>
+</html>
