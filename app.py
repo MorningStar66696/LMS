@@ -17,16 +17,26 @@ load_dotenv()
 DB_USER = os.getenv("SUPABASE_DB_USER")
 DB_PASSWORD = os.getenv("SUPABASE_DB_PASSWORD")
 DB_HOST = os.getenv("SUPABASE_DB_HOST")
-DB_PORT = os.getenv("SUPABASE_DB_PORT", "6543")
+DB_PORT = os.getenv("SUPABASE_DB_PORT", "5432")
 DB_NAME = os.getenv("SUPABASE_DB_NAME")
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-PdJWriOifyJHWBqf7YIKZiKq7nQ1AnQD-o8oRd0pVVDxs1OIH4m3kqmlig5nOeaM/exec"
 def get_connection():
+    missing = []
+    if not DB_HOST: missing.append("SUPABASE_DB_HOST")
+    if not DB_USER: missing.append("SUPABASE_DB_USER")
+    if not DB_PASSWORD: missing.append("SUPABASE_DB_PASSWORD")
+    if not DB_NAME: missing.append("SUPABASE_DB_NAME")
+
+    if missing:
+        raise Exception(f"Missing env vars: {', '.join(missing)}")
+
     return psycopg2.connect(
+        host=DB_HOST,
         user=DB_USER,
         password=DB_PASSWORD,
-        host=DB_HOST,
+        dbname=DB_NAME,
         port=int(DB_PORT),
-        dbname=DB_NAME
+        connect_timeout=5
     )
 def get_table_columns(cur, table_name):
     cur.execute("""
