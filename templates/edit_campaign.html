@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Edit Campaign</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-dark text-light p-4">
+
+<h2>✏ Edit Automation Campaign</h2>
+
+<a href="/" class="btn btn-outline-light mb-3">🏠 Go to Home</a>
+
+<form method="POST" id="editForm">
+
+  <div class="mb-3">
+    <label class="form-label">Campaign Name</label>
+    <input name="name" class="form-control" value="{{ campaign[1] }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Google Sheet URL</label>
+    <input name="sheet_url" class="form-control" value="{{ campaign[4] }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Trigger Interval (minutes)</label>
+    <input name="interval" class="form-control" value="{{ campaign[5] }}">
+  </div>
+
+  <hr class="my-4">
+
+  <!-- ============================= -->
+  <!--        MAPPINGS SECTION       -->
+  <!-- ============================= -->
+
+  <h4>🗂 Field Mappings</h4>
+
+  <div id="mappingContainer"></div>
+
+  <button type="button" class="btn btn-outline-light btn-sm mt-2" onclick="addMappingRow()">
+    ➕ Add Mapping
+  </button>
+
+  <input type="hidden" name="mappings_json" id="mappings_json">
+
+  <hr class="my-4">
+
+  <!-- ============================= -->
+  <!--       AUTOMATION RULES        -->
+  <!-- ============================= -->
+
+  <h4>⚙️ Automation Rules</h4>
+
+  <div id="ruleContainer"></div>
+
+  <button type="button" class="btn btn-outline-warning btn-sm mt-2" onclick="addAutomationRule()">
+    ➕ Add Rule
+  </button>
+
+  <input type="hidden" name="rules_json" id="rules_json">
+
+  <div class="mt-4">
+    <label class="form-label">Daily RO (Limit Before 6 PM)</label>
+    <input type="number" name="daily_ro" class="form-control" value="{{ campaign[7] }}">
+  </div>
+
+  <hr class="my-4">
+
+  <button class="btn btn-success w-100">💾 Save Changes</button>
+  <a href="/saved-campaigns" class="btn btn-secondary w-100 mt-2">Cancel</a>
+
+</form>
+
+
+<script>
+const mappings = JSON.parse(String.raw`{{ campaign[3]|safe }}`);
+const rules = JSON.parse(String.raw`{{ campaign[6]|safe }}`);
+const masterOptions = `{% for col in get_table_columns %}<option value="{{ col }}">{{ col }}</option>{% endfor %}`;
+
+function addMappingRow(data=null) {
+  const container = document.getElementById("mappingContainer");
+  const row = document.createElement("div");
+  row.className = "row g-2 mapping-row mb-2";
+
+  row.innerHTML = `
+    <div class="col">
+      <input class="form-control table-field" placeholder="Table Field" value="${data ? data.tableField : ''}">
+    </div>
+    <div class="col">
+      <input class="form-control sheet-field" placeholder="Sheet Header" value="${data ? data.sheetField : ''}">
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-danger" onclick="this.closest('.mapping-row').remove()">✕</button>
+    </div>
+  `;
+
+  container.appendChild(row);
+}
+
+function addAutomationRule(rule=null) {
+  const container = document.getElementById("ruleContainer");
+  const box = document.createElement("div");
+  box.className = "p-2 border rounded mb-3";
+
+  box.innerHTML = `
+    <label class="form-label small">Column</label>
+    <input class="form-control rule-field" value="${rule ? rule.field : ''}">
+    
+    <label class="form-label small mt-2">Values (comma separated)</label>
+    <input class="form-control rule-value" value="${rule ? rule.value.join(',') : ''}">
+
+    <button type="button" class="btn btn-danger btn-sm mt-2" onclick="this.closest('.p-2').remove()">Remove</button>
+  `;
+
+  container.appendChild(box);
+}
+
+// Load existing data
+window.onload = () => {
+  mappings.forEach(m => addMappingRow(m));
+  rules.forEach(r => addAutomationRule(r));
+
+  document.getElementById("editForm").addEventListener("submit", function() {
+    const mappingRows = [];
+    document.querySelectorAll(".mapping-row").forEach(r => {
+      mappingRows.push({
+        tableField: r.querySelector(".table-field").value,
+        sheetField: r.querySelector(".sheet-field").value
+      });
+    });
+
+    const ruleRows = [];
+    document.querySelectorAll("#ruleContainer .p-2").forEach(b => {
+      ruleRows.push({
+        field: b.querySelector(".rule-field").value,
+        value: b.querySelector(".rule-value").value.split(",")
+      });
+    });
+
+    document.getElementById("mappings_json").value = JSON.stringify(mappingRows);
+    document.getElementById("rules_json").value = JSON.stringify(ruleRows);
+  });
+};
+</script>
+
+</body>
+</html>

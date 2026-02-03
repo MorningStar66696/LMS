@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Edit Campaign</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-dark text-light p-4">
+
+  <h2>✏ Edit Automation Campaign</h2>
+
+  <a href="/" class="btn btn-outline-light mb-3">🏠 Go to Home</a>
+
+  <form method="POST" id="editForm">
+
+    <!-- META INFO -->
+    <div class="alert alert-secondary text-dark">
+      <b>Updated By:</b> {{ campaign[8] }} <br>
+      <b>Created By:</b> {{ campaign[11] }} <br>
+      <b>Created At:</b> {{ campaign[12] }} <br>
+      <b>Last Updated:</b> {{ campaign[9] }} <br>
+      <b>Last Trigger Run:</b> {{ campaign[10] }}
+    </div>
+
+    <!-- Campaign Name -->
+    <div class="mb-3">
+      <label class="form-label">Campaign Name</label>
+      <input name="name" class="form-control" value="{{ campaign[1] }}">
+    </div>
+
+    <!-- Sheet URL -->
+    <div class="mb-3">
+      <label class="form-label">Google Sheet URL</label>
+      <input name="sheet_url" class="form-control" value="{{ campaign[4] }}">
+    </div>
+
+    <!-- Sheet Name -->
+    <div class="mb-3">
+      <label class="form-label">Sheet Name (Tab Name)</label>
+      <input name="sheet_name" class="form-control" value="{{ campaign[14] or '' }}" placeholder="Sheet1">
+    </div>
+
+    <!-- Interval -->
+    <div class="mb-3">
+      <label class="form-label">Trigger Interval (minutes)</label>
+      <input name="interval" class="form-control" value="{{ campaign[5] }}">
+    </div>
+
+    <hr class="my-4">
+
+    <!-- ============================= -->
+    <!--        MAPPINGS SECTION       -->
+    <!-- ============================= -->
+
+    <h4>🗂 Field Mappings</h4>
+
+    <div id="mappingContainer"></div>
+
+    <button type="button" class="btn btn-outline-light btn-sm mt-2" onclick="addMappingRow()">
+      ➕ Add Mapping
+    </button>
+
+    <input type="hidden" name="mappings_json" id="mappings_json">
+
+    <hr class="my-4">
+
+    <!-- ============================= -->
+    <!--       AUTOMATION RULES        -->
+    <!-- ============================= -->
+
+    <h4>⚙️ Automation Rules</h4>
+
+    <div id="ruleContainer"></div>
+
+    <button type="button" class="btn btn-outline-warning btn-sm mt-2" onclick="addAutomationRule()">
+      ➕ Add Rule
+    </button>
+
+    <input type="hidden" name="rules_json" id="rules_json">
+
+    <!-- DAILY RO -->
+    <div class="mt-4">
+      <label class="form-label">Daily RO (Limit Before 6 PM)</label>
+      <input type="number" name="daily_ro" class="form-control" value="{{ campaign[7] }}">
+    </div>
+
+    <hr class="my-4">
+
+    <!-- ACTIONS -->
+    <button class="btn btn-success w-100">💾 Save Changes</button>
+    <a href="/saved-campaigns" class="btn btn-secondary w-100 mt-2">Cancel</a>
+
+  </form>
+
+  <!-- =================== JS =================== -->
+
+  <script type="application/json" id="data-table-columns">
+    {{ table_columns | default([]) | tojson }}
+  </script>
+  <script type="application/json" id="data-mappings">
+    {{ mappings_json | default([]) | tojson }}
+  </script>
+  <script type="application/json" id="data-rules">
+    {{ rules_json | default([]) | tojson }}
+  </script>
+
+  <script>
+    const tableColumns = JSON.parse(document.getElementById('data-table-columns').textContent);
+    const mappings = JSON.parse(document.getElementById('data-mappings').textContent);
+    const rules = JSON.parse(document.getElementById('data-rules').textContent);
+
+    /* ---------------- MAPPING ROW ---------------- */
+    function addMappingRow(data = null) {
+      const container = document.getElementById("mappingContainer");
+
+      const row = document.createElement("div");
+      row.className = "row g-2 mapping-row mb-2";
+
+      let options = tableColumns.map(c =>
+        `<option value="${c}" ${data && data.tableField === c ? 'selected' : ''}>${c}</option>`
+      ).join("");
+
+      row.innerHTML = `
+      <div class="col">
+        <select class="form-select table-field">
+            <option value="">--Select Table Column--</option>
+            ${options}
+        </select>
+      </div>
+
+      <div class="col">
+        <input class="form-control sheet-field"
+               placeholder="Sheet Header"
+               value="${data ? data.sheetField : ''}">
+        <div class="form-check mt-1">
+            <input class="form-check-input dedupe-check" type="checkbox"
+                   ${data && data.dedupe ? "checked" : ""}>
+            <label class="form-check-label small">Prevent duplicate</label>
+        </div>
+      </div>
+
+      <div class="col-auto">
+        <button type="button" class="btn btn-danger"
+                onclick="this.closest('.mapping-row').remove()">
+          ✕
+        </button>
+      </div>
+    `;
+
+      container.appendChild(row);
+    }
+
+    /* ---------------- RULE ROW ---------------- */
+    function addAutomationRule(rule = null) {
+      const container = document.getElementById("ruleContainer");
+
+      const box = document.createElement("div");
+      box.className = "p-3 border rounded mb-3 bg-secondary";
+
+      let options = tableColumns.map(c =>
+        `<option value="${c}" ${rule && rule.field === c ? 'selected' : ''}>${c}</option>`
+      ).join("");
+
+      box.innerHTML = `
+      <label class="form-label small text-light">Column</label>
+      <select class="form-select auto-rule-field" onchange="loadRuleValues(this)">
+        <option value="">-- Select Column --</option>
+        ${options}
+      </select>
+
+      <div class="rule-values mt-3 text-light small">
+        ${rule ? rule.value.map(v =>
+        `<div><input type="checkbox" class="rule-value-check" value="${v}" checked> ${v}</div>`
+      ).join("") : "Select column to load values"}
+      </div>
+
+      <button type="button" class="btn btn-danger btn-sm mt-3"
+              onclick="this.closest('.p-3').remove()">
+        ✕ Remove Rule
+      </button>
+    `;
+
+      container.appendChild(box);
+    }
+
+    /* ---------------- LOAD DISTINCT VALUES ---------------- */
+    function loadRuleValues(selectEl) {
+      const box = selectEl.closest(".p-3");
+      const valuesDiv = box.querySelector(".rule-values");
+      const column = selectEl.value;
+
+      if (!column) {
+        valuesDiv.innerHTML = "Select column to load values";
+        return;
+      }
+
+      fetch(`/api/distinct/${column}`)
+        .then(r => r.json())
+        .then(values => {
+          valuesDiv.innerHTML = values.map(v => `
+              <div>
+                <input type="checkbox" class="rule-value-check" value="${v}">
+                ${v}
+              </div>
+            `).join("");
+        });
+    }
+
+    /* ---------------- ON PAGE LOAD ---------------- */
+    document.addEventListener("DOMContentLoaded", function () {
+
+      // Load existing mappings
+      mappings.forEach(m => addMappingRow(m));
+
+      // Load existing rules
+      rules.forEach(r => addAutomationRule(r));
+
+      // On submit → convert UI to JSON for backend
+      document.getElementById("editForm").addEventListener("submit", function () {
+
+        // Build mapping JSON
+        const mappingRows = [];
+        document.querySelectorAll(".mapping-row").forEach(r => {
+          mappingRows.push({
+            tableField: r.querySelector(".table-field").value,
+            sheetField: r.querySelector(".sheet-field").value,
+            dedupe: r.querySelector(".dedupe-check")?.checked || false
+          });
+        });
+
+        // Build automation rule JSON
+        const ruleRows = [];
+        document.querySelectorAll("#ruleContainer .p-3").forEach(b => {
+          const field = b.querySelector(".auto-rule-field").value;
+          const vals = [...b.querySelectorAll(".rule-value-check:checked")].map(cb => cb.value);
+
+          if (field && vals.length) {
+            ruleRows.push({ field, value: vals });
+          }
+        });
+
+        document.getElementById("mappings_json").value = JSON.stringify(mappingRows);
+        document.getElementById("rules_json").value = JSON.stringify(ruleRows);
+      });
+
+    });
+  </script>
+
+</body>
+
+</html>

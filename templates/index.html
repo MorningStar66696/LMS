@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #F5F7FA;
+      --panel: #FFFFFF;
+      --panel-soft: #F9F9F9;
+      --accent: #FF4F00;
+      --accent-hover: #E04600;
+      --text: #2D2E2E;
+      --muted: #6C757D;
+      --border: #E0E0E0;
+      --hover: #FFF5F0;
+      --row-alt: #FAFAFA;
+      --row-odd: #FFFFFF;
+      --row-even: #FAFAFA;
+      --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    td.hidden-col,
+    th.hidden-col {
+      display: none !important;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* GLOBAL ANIMATIONS */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    /* LAYOUT SKELETON */
+
+    /* CUSTOM PILLS FOR FULLSCREEN MODAL */
+    .custom-pills .nav-link {
+      color: var(--text);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .custom-pills .nav-link:hover {
+      background: #f8f9fa;
+      color: var(--accent);
+    }
+
+    .custom-pills .nav-link.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(255, 79, 0, 0.2);
+    }
+
+    .custom-pills .nav-link i {
+      font-size: 1.2rem;
+    }
+
+    .modal-fullscreen .modal-header {
+      border-bottom: 1px solid #eee;
+    }
+
+    .form-label-bold {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .dashboard-layout {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR TRANSITIONS */
+    .sidebar {
+      width: 280px;
+      background: #FFFFFF;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: margin-left 0.3s ease-in-out;
+    }
+
+    .sidebar.hidden {
+      margin-left: -280px;
+    }
+
+    .sidebar-header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* MAIN CONTENT WRAPPER */
+    .content-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+      transition: width 0.3s ease-in-out;
+    }
+
+    /* TOP NAVBAR */
+    .top-nav {
+      height: 64px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      flex-shrink: 0;
+    }
+
+    .nav-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* SCROLLABLE MAIN BODY */
+    .main-body {
+      padding: 32px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* FILTER STYLING UPDATE */
+    .filter-card {
+      background: #FFFFFF;
+      border: 1px solid transparent;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .filter-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      /* Lift effect */
+    }
+
+    .filter-card.active {
+      background: #FFFFFF;
+      border-color: var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .filter-header {
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    .filter-header:hover {
+      background: var(--hover);
+      color: var(--accent);
+    }
+
+    .filter-header .bi-chevron-down {
+      font-size: 12px;
+      transition: transform 0.2s ease;
+      color: var(--muted);
+    }
+
+    .filter-card.active .filter-header .bi-chevron-down {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .filter-body {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+      /* JS toggles this */
+    }
+
+    /* CUSTOM SCROLLBAR for Filters */
+    .filter-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .filter-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .filter-body::-webkit-scrollbar-thumb {
+      background-color: #e0e0e0;
+      border-radius: 10px;
+    }
+
+    .filter-search {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .filter-search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 79, 0, 0.1);
+    }
+
+    /* CUSTOM CHECKBOX */
+    .form-check {
+      padding-left: 28px;
+      margin-bottom: 8px;
+      min-height: 20px;
+    }
+
+    .form-check-input {
+      background-color: #fff;
+      border: 1px solid #d0d0d0;
+      width: 16px;
+      height: 16px;
+      margin-left: -28px;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .form-check-input:checked {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .form-check-label {
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      padding-top: 1px;
+    }
+
+    .form-check:hover .form-check-label {
+      color: var(--accent);
+    }
+
+    /* BUTTONS: Modern & Interactive */
+    .btn {
+      transition: all 0.2s ease;
+      font-weight: 500;
+      border-radius: 6px;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 2px 4px rgba(255, 79, 0, 0.2);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(255, 79, 0, 0.3);
+    }
+
+    .btn-light {
+      background: #fff;
+      border-color: #e0e0e0;
+      color: var(--text);
+    }
+
+    .btn-light:hover {
+      background: #f8f9fa;
+      border-color: #ccc;
+      transform: translateY(-1px);
+    }
+
+    /* INPUTS: Clean Focus */
+    .form-control,
+    .form-select {
+      border-radius: 6px;
+      border: 1px solid #d0d0d0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 79, 0, 0.15);
+    }
+
+    /* Remove old filter panel styles */
+    .filter-panel {
+      display: none;
+    }
+
+    /* STAT BOXES - COLORFUL & HANDSOME */
+    .stat-box {
+      background: #FFFFFF;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    /* BLUE VARIANT */
+    .stat-blue {
+      border-left: 5px solid #0d6efd;
+      background: linear-gradient(to right, #f8faff, #ffffff);
+    }
+
+    /* ORANGE VARIANT */
+    .stat-orange {
+      border-left: 5px solid #FF4F00;
+      background: linear-gradient(to right, #fff5f0, #ffffff);
+    }
+
+    .text-orange {
+      color: #FF4F00 !important;
+    }
+
+    /* GREEN VARIANT */
+    .stat-green {
+      border-left: 5px solid #198754;
+      background: linear-gradient(to right, #f0fdf4, #ffffff);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 24px;
+    }
+
+
+
+    /* TABLE */
+    .table-wrapper {
+      background: var(--panel);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      max-height: 65vh;
+      overflow: auto;
+    }
+
+    table {
+      min-width: 1600px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #FFF5F0;
+      /* Light orange background */
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #FF4F00;
+      /* Orange text */
+      padding: 12px;
+      border-bottom: 2px solid #FF4F00;
+      /* Orange border */
+      border-right: 1px solid var(--border);
+      z-index: 10;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    tbody tr:hover {
+      background: var(--hover) !important;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      /* Row pop effect */
+      transform: scale(1);
+    }
+
+    tbody tr {
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    td {
+      font-size: 13px;
+      padding: 10px 12px;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* COLUMN SEPARATORS */
+    thead th,
+    tbody td {
+      border-right: 1px solid var(--border);
+    }
+
+    /* CENTER ALIGN TABLE DATA */
+    thead th,
+    tbody td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* remove last column right border */
+    thead th:last-child,
+    tbody td:last-child {
+      border-right: none;
+    }
+
+    /* PAGINATION BAR */
+    .pagination-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    /* PAGINATION INFO VISIBILITY FIX */
+    .pagination-bar .text-muted {
+      color: #e6e9ff !important;
+      /* brighter */
+      font-size: 13.5px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .page-link {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .page-item.active .page-link {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .filter-actions {
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+      padding-bottom: 12px;
+      z-index: 10;
+    }
+
+    /* ============================
+     BETTER MAPPING UI
+     ============================ */
+
+    .mapping-row {
+      background: #11152e;
+      padding: 10px 12px !important;
+      border-radius: 8px;
+      border: 1px solid #2a2f55;
+      margin-bottom: 10px;
+      transition: 0.2s;
+    }
+
+    .mapping-row:hover {
+      background: #1a1f3f;
+      border-color: #4c6fff;
+    }
+
+    /* SMALLER CLEAN SELECT BOX */
+    .mapping-row select.form-select {
+      background: #0d1130;
+      color: #fff;
+      border: 1px solid #3b4270;
+      height: 38px;
+      font-size: 13px;
+    }
+
+    /* TEXTBOXES LOOK CLEAN */
+    .mapping-row .form-control {
+      background: #0d1130;
+      border: 1px solid #3b4270;
+      color: #fff;
+      font-size: 13px;
+      height: 38px;
+    }
+
+    /* STATIC VALUE field smaller */
+    .mapping-row .static-value {
+      height: 34px !important;
+      font-size: 12.5px;
+    }
+
+    /* DEDUPE CHECKBOX SMALLER */
+    .mapping-row .form-check-label {
+      font-size: 11.5px;
+      opacity: 0.8;
+    }
+
+    .mapping-row .form-check-input {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* REMOVE BUTTON */
+    .mapping-row .btn-danger {
+      height: 38px;
+      width: 38px;
+      padding: 0;
+      font-size: 16px;
+      border-radius: 6px;
+    }
+
+    /* TAB CONTENT CLEAN SPACING */
+    #manual,
+    #automation {
+      padding: 10px 4px;
+    }
+
+    /* MODAL CLEANUP */
+    .modal-content {
+      background: #FFFFFF;
+      color: var(--text);
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-close {
+      filter: none;
+      /* Default black close icon for light mode */
+    }
+
+    /* GOOGLE SHEET URL FIELDS */
+    .modal-body .form-control {
+      background: #fff;
+      border: 1px solid #ccc;
+      color: var(--text);
+      font-size: 13px;
+      height: 40px;
+    }
+
+    .modal-body .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 79, 0, 0.1);
+    }
+
+    /* ADD MAPPING BUTTON */
+    .btn-outline-light.btn-sm {
+      padding: 5px 10px;
+      font-size: 12.5px;
+      border-radius: 6px;
+    }
+
+    /* SECTION LABELS */
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ccd0ff;
+    }
+
+    /* RULE BOXES */
+    #ruleContainer .p-2,
+    #switchContainer .p-2 {
+      background: #121630;
+      border: 1px solid #2e345e;
+      border-radius: 8px;
+    }
+
+    #ruleContainer .p-2:hover,
+    #switchContainer .p-2:hover {
+      border-color: #4c6fff;
+    }
+
+    /* SELECT BOXES INSIDE RULES */
+    #ruleContainer select,
+    #switchContainer select {
+      background: #0d1130;
+      border: 1px solid #3b4270;
+      color: #fff;
+      font-size: 12.5px;
+    }
+
+    /* RULE INPUTS */
+    #ruleContainer input,
+    #switchContainer input {
+      background: #0d1130;
+      border: 1px solid #3b4270;
+      color: #fff;
+      font-size: 12.5px;
+    }
+
+    #manualRuleContainer .manual-box {
+      background: #121630;
+      border: 1px solid #2e345e;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <template id="masterColumnsTemplate">
+    {% for col in table_columns %}
+    {% if col != "__ctid" %}
+    <option value="{{ col }}" data-real="{{ col }}">{{ col }}</option>
+    {% endif %}
+    {% endfor %}
+  </template>
+  <script>
+    console.log("🔥 HTML LOADED NEW VERSION");
+  </script>
+  <!-- Data Block for Headers to avoid JS Syntax Errors -->
+  <script type="application/json" id="headers-data">
+    {{ headers | tojson }}
+  </script>
+
+
+  {% set last_page = (total // limit) + (1 if total % limit else 0) %}
+
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        ⚡ LeadFlow
+      </div>
+
+      <div class="sidebar-content">
+        <div class="d-grid mb-4">
+          <a href="/saved-campaigns" class="btn btn-outline-secondary btn-sm">
+            📂 Saved Campaigns
+          </a>
+        </div>
+
+        <h6 class="text-uppercase text-muted small fw-bold mb-3 ps-2">Filters</h6>
+
+        <form method="get" id="filterForm">
+          <input class="form-control mb-3" name="search" value="{{ search }}" placeholder="Search leads...">
+
+          {% for h in filter_options.keys() %}
+          <div class="filter-card">
+            <div class="filter-header" onclick="toggleFilter(this, '{{ loop.index }}')">
+              {{ h }}
+              <i class="bi bi-chevron-down"></i>
+            </div>
+
+            <div class="filter-body" id="filter{{ loop.index }}">
+              {% if filter_options.get(h) %}
+              <input class="form-control filter-search" placeholder="Search..." onkeyup="filterOptions(this)">
+              {% for v in filter_options[h] %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="filter_{{ h }}_{{ loop.index }}"
+                  name="filter_{{ h }}" value="{{ v }}" {% if v in selected_filters.get(h, []) %}checked{% endif %}>
+                <label class="form-check-label" for="filter_{{ h }}_{{ loop.index }}">
+                  {{ v }}
+                </label>
+              </div>
+              {% endfor %}
+              {% else %}
+              <div class="text-muted small">No values</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+
+          <!-- STICKY ACTION BUTTONS REMOVED FROM HERE, CAN BE AT BOTTOM OR TOP -->
+          <div class="mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-dark w-100 mb-2">Apply Filters</button>
+            <a href="/" class="btn btn-link text-muted w-100 text-decoration-none">Clear All</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="content-wrapper animate-fade-in">
+
+      <!-- TOP NAV -->
+      <div class="top-nav">
+
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light btn-sm border" onclick="toggleSidebar()" title="Toggle Sidebar">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div class="nav-title mb-0">All Leads</div>
+        </div>
+
+        <!-- GLOBAL ACTIONS -->
+        <div class="d-flex gap-3">
+          <div class="dropdown">
+            <button class="btn btn-light border btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+              Actions
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/analytics">📊 Analytics</a></li>
+              <li><a class="dropdown-item" href="#" onclick="saveCurrentView()">💾 Save View</a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('download') }}?{{ request.query_string.decode() }}">⬇️
+                  Download CSV</a></li>
+            </ul>
+          </div>
+
+          <button class="btn btn-primary btn-sm px-3" onclick="openSheetModal()">
+            📤 Send to Sheet
+          </button>
+        </div>
+      </div>
+
+      <!-- SCROLLABLE BODY -->
+      <div class="main-body">
+
+        <!-- STATS ROW -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="stat-box stat-blue">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="text-uppercase small fw-bold text-primary opacity-75">Total Leads</div>
+                  <h3 class="mb-0 text-primary">{{ total }}</h3>
+                </div>
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-box stat-orange">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="text-uppercase small fw-bold text-orange opacity-75">Current Page</div>
+                  <h3 class="mb-0 text-orange">{{ page }} <span class="fs-6 opacity-50">/ {{ last_page }}</span></h3>
+                </div>
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning"
+                  style="color: #FF4F00 !important; background: rgba(255,79,0,0.1) !important;">
+                  <i class="bi bi-layers-fill"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-box stat-green">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="text-uppercase small fw-bold text-success opacity-75">Valid Leads</div>
+                  <h3 class="mb-0 text-success">{{ data|length }}</h3>
+                </div>
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                  <i class="bi bi-check-circle-fill"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLE CARD -->
+        <div class="card border-0 shadow-sm" style="overflow:hidden">
+          <!-- TABLE ACTIONS TOOLBAR -->
+          <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
+            <div class="d-flex gap-2">
+              <button class="btn btn-light btn-sm border" onclick="downloadSelected()">
+                ⬇ Sel.
+              </button>
+
+              <!-- COLUMNS DROPDOWN -->
+              <div class="dropdown">
+                <button class="btn btn-light btn-sm border dropdown-toggle" data-bs-toggle="dropdown">
+                  Columns
+                </button>
+                <div class="dropdown-menu p-3 shadow" style="max-height:300px;overflow:auto"
+                  onclick="event.stopPropagation()">
+                  {% for h in headers %}
+                  <div class="form-check">
+                    <input class="form-check-input column-toggle" type="checkbox" id="col_toggle_{{ loop.index0 + 1 }}"
+                      data-col="{{ loop.index0 + 1 }}" onclick="event.stopPropagation()" {% if h !='__ctid' %}checked{%
+                      endif %} />
+                    <label class="form-check-label small" for="col_toggle_{{ loop.index0 + 1 }}">{{ h }}</label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGINATION DROPDOWN -->
+            <form method="get" id="limitForm" class="d-flex align-items-center">
+              {% for k, v in request.args.items() %}
+              {% if k != 'limit' and k != 'page' %}
+              <input type="hidden" name="{{ k }}" value="{{ v }}">
+              {% endif %}
+              {% endfor %}
+              <select name="limit" class="form-select form-select-sm"
+                style="width:auto; border:none; background:#f5f7fa" onchange="this.form.submit()">
+                {% for l in [25,50,100,200] %}
+                <option value="{{ l }}" {% if limit==l %}selected{% endif %}>{{ l }} rows</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+
+          <!-- TABLE WRAPPER -->
+          <div class="table-responsive" style="max-height: 60vh;">
+            <table class="table table-hover mb-0 align-middle" style="min-width: 1000px">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:40px" class="ps-3">
+                    <input class="form-check-input" type="checkbox" id="selectAll">
+                  </th>
+                  {% for h in headers %}
+                  <th data-col="{{ loop.index0 + 1 }}" class="small text-muted text-uppercase fw-bold">{{ h }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in data %}
+                <tr onclick="openLeadDetail(this)" style="cursor: pointer;">
+                  <td class="ps-3" onclick="event.stopPropagation()">
+                    <input class="form-check-input row-select" type="checkbox" value="{{ row['__ctid'] }}">
+                  </td>
+                  {% for h in headers %}
+                  <td data-col="{{ loop.index0 + 1 }}" class="small">{{ row[h] }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- FOOTER PAGINATION -->
+          <div class="d-flex justify-content-between align-items-center p-3 border-top bg-white">
+            <div class="small text-muted fw-medium">
+              Showing {{ (page-1)*limit + 1 }} – {{ (page-1)*limit + data|length }} of {{ total }} leads
+            </div>
+
+            <nav aria-label="Page navigation">
+              <ul class="pagination pagination-sm mb-0">
+
+                <!-- FIRST PAGE -->
+                <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                  <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+
+                <!-- PREVIOUS -->
+                <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                  <a class="page-link" href="?page={{ page-1 }}" aria-label="Previous">
+                    <span aria-hidden="true">&lsaquo;</span>
+                  </a>
+                </li>
+
+                <!-- NUMBERED PAGES (Window of +/- 2) -->
+                {% for p in range(page-2, page+3) %}
+                {% if p > 0 and p <= last_page %} <li class="page-item {% if p == page %}active{% endif %}">
+                  <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+
+                  <!-- NEXT -->
+                  <li class="page-item {% if page >= last_page %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page+1 }}" aria-label="Next">
+                      <span aria-hidden="true">&rsaquo;</span>
+                    </a>
+                  </li>
+
+                  <!-- LAST PAGE -->
+                  <li class="page-item {% if page >= last_page %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ last_page }}" aria-label="Last">
+                      <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                  </li>
+              </ul>
+            </nav>
+          </div>
+
+        </div> <!-- END CARD -->
+
+      </div> <!-- END MAIN BODY -->
+
+    </div> <!-- END CONTENT WRAPPER -->
+
+  </div> <!-- END LAYOUT -->
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log("🔥 DOM LOADED — READY");
+      // 🔥 FORCE BIND MANUAL SEND BUTTON AGAIN
+
+
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        console.log("📍 Found column checkbox:", cb.dataset.col);
+        cb.addEventListener("change", function () {
+          console.log("⚡ CHANGE Fired on col:", this.dataset.col, "Checked:", this.checked);
+          toggleColumn(this.dataset.col, this.checked);
+          saveColumnPrefs();
+        });
+      });
+
+
+      loadColumnPrefs();
+
+      // 🔥 FORCE HIDE __ctid BY DEFAULT (FIRST LOAD)
+      // Read from hidden JSON block defined below to satisfy IDE linters
+      try {
+        const headersRaw = document.getElementById("headers-data").textContent;
+        const HEADERS = JSON.parse(headersRaw);
+
+        if (HEADERS && Array.isArray(HEADERS)) {
+          HEADERS.forEach((h, index) => {
+            if (h === "__ctid") {
+              toggleColumn(index + 1, false);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Could not auto-hide __ctid", e);
+      }
+    });
+
+    function toggleColumn(colIndex, show) {
+      console.log("➡ toggling column", colIndex, "show =", show);
+
+      const nodes = document.querySelectorAll(`[data-col='${colIndex}']`);
+      console.log("Found", nodes.length, "nodes");
+
+      nodes.forEach(el => {
+        if (show) {
+          el.classList.remove("hidden-col");
+          console.log("🔓 UNHIDE");
+        } else {
+          el.classList.add("hidden-col");
+          console.log("🔒 HIDE");
+        }
+      });
+
+      console.log("✔ toggle done");
+    }
+
+    function saveColumnPrefs() {
+      const prefs = {};
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        prefs[cb.dataset.col] = cb.checked;
+      });
+      localStorage.setItem("columnPrefs", JSON.stringify(prefs));
+    }
+
+    function loadColumnPrefs() {
+      const prefs = JSON.parse(localStorage.getItem("columnPrefs") || "{}");
+      document.querySelectorAll(".column-toggle").forEach(cb => {
+        if (prefs.hasOwnProperty(cb.dataset.col)) {
+          cb.checked = prefs[cb.dataset.col];
+          toggleColumn(cb.dataset.col, cb.checked);
+        }
+      });
+    }
+  </script>
+  <script>
+    function getSavedViews() {
+      return JSON.parse(localStorage.getItem("savedViews") || "{}");
+    }
+
+    function saveViews(views) {
+      localStorage.setItem("savedViews", JSON.stringify(views));
+    }
+
+    function saveCurrentView() {
+      const name = prompt("Enter view name (e.g. Delhi MBA Leads)");
+      if (!name) return;
+
+      const views = getSavedViews();
+      views[name] = window.location.search || "?";
+
+      saveViews(views);
+      renderSavedViews();
+    }
+
+    function loadView(query) {
+      window.location.href = query;
+    }
+
+    function deleteView(name) {
+      const views = getSavedViews();
+      delete views[name];
+      saveViews(views);
+      renderSavedViews();
+    }
+
+    function renderSavedViews() {
+      const views = getSavedViews();
+      const menu = document.getElementById("savedViewsMenu");
+
+      menu.innerHTML = "";
+
+      if (Object.keys(views).length === 0) {
+        menu.innerHTML =
+          '<div class="text-muted small px-2">No saved views</div>';
+        return;
+      }
+
+      Object.entries(views).forEach(([name, query]) => {
+        const item = document.createElement("div");
+        item.className =
+          "d-flex justify-content-between align-items-center dropdown-item";
+
+        item.innerHTML = `
+            <span style="cursor:pointer" onclick="loadView('${query}')">
+              ${name}
+            </span>
+            <i class="bi bi-trash text-danger"
+               style="cursor:pointer"
+               onclick="deleteView('${name}')"></i>
+          `;
+
+        menu.appendChild(item);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", renderSavedViews);
+  </script>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.classList.toggle('hidden');
+    }
+
+    function toggleFilter(headerEl, id) {
+      // Robustly find the parent card using closest()
+      const card = headerEl.closest('.filter-card');
+      const body = document.getElementById("filter" + id);
+
+      if (!body) return;
+
+      // Toggle current
+      const isHidden = (body.style.display === "none" || body.style.display === "");
+
+      if (isHidden) {
+        body.style.display = "block";
+        card?.classList.add('active');
+        // Rotate arrow
+      } else {
+        body.style.display = "none";
+        card?.classList.remove('active');
+      }
+    }
+  </script>
+  <script>
+    document.getElementById("selectAll")?.addEventListener("change", function () {
+      document.querySelectorAll(".row-select").forEach(cb => {
+        cb.checked = this.checked;
+      });
+    });
+
+    function downloadSelected() {
+      const ids = Array.from(
+        document.querySelectorAll(".row-select:checked")
+      ).map(cb => cb.value);
+
+      if (ids.length === 0) {
+        alert("Select at least one row");
+        return;
+      }
+
+      const params = new URLSearchParams();
+      ids.forEach(id => params.append("ids", id));
+
+      window.location.href = "/download-selected?" + params.toString();
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- GOOGLE SHEET MODAL (FULLSCREEN) -->
+  <div class="modal fade" id="sheetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content border-0 bg-light">
+
+        <!-- HEADER -->
+        <div class="modal-header bg-white border-bottom shadow-sm px-4 py-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-circle">
+              <i class="bi bi-google text-primary fs-4"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0">Google Sheet Integration</h5>
+              <p class="text-muted small mb-0">Manage manual sends and automated triggers</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-0">
+          <div class="container-fluid h-100">
+            <div class="row h-100">
+
+              <!-- LEFT SIDEBAR FOR TABS -->
+              <div class="col-md-3 col-lg-2 bg-white border-end py-4 px-0">
+                <div class="nav flex-column nav-pills custom-pills px-3" id="modeTabs" role="tablist">
+                  <button class="nav-link active mb-2 text-start py-3 px-3 d-flex align-items-center gap-2"
+                    id="manual-tab" data-bs-toggle="pill" data-bs-target="#manual" type="button" role="tab">
+                    <i class="bi bi-send"></i>
+                    <div>
+                      <div class="fw-semibold">Manual Send</div>
+                      <div class="small opacity-75 fw-normal">One-time export</div>
+                    </div>
+                  </button>
+                  <button class="nav-link text-start py-3 px-3 d-flex align-items-center gap-2" id="auto-tab"
+                    data-bs-toggle="pill" data-bs-target="#automation" type="button" role="tab">
+                    <i class="bi bi-robot"></i>
+                    <div>
+                      <div class="fw-semibold">Automation</div>
+                      <div class="small opacity-75 fw-normal">Triggers & Rules</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- RIGHT CONTENT AREA -->
+              <div class="col-md-9 col-lg-10 py-5 px-5" style="overflow-y: auto; height: calc(100vh - 80px);">
+
+                <div class="tab-content w-100" style="max-width: 900px; margin: 0 auto;">
+
+                  <!-- TAB 1: MANUAL -->
+                  <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                      <h4 class="fw-bold mb-0">Manual Export</h4>
+                      <button class="btn btn-outline-secondary btn-sm" onclick="openControlSheetModal()">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Load Config
+                      </button>
+                    </div>
+
+
+                    <div class="mb-3">
+                      <label class="form-label">Google Sheet URL</label>
+                      <input type="text" id="sheetUrl" class="form-control"
+                        placeholder="https://docs.google.com/spreadsheets/...">
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Sheet Name (Tab Name)</label>
+                      <input class="form-control" id="manualSheetName" placeholder="Sheet1">
+                    </div>
+
+                    <!-- DAILY RO for MANUAL -->
+                    <div class="mb-3">
+                      <label class="form-label">Daily RO (limit)</label>
+                      <input type="number" id="manualDailyRo" class="form-control" placeholder="20">
+                    </div>
+                    <!-- DATE RANGE FILTER -->
+                    <div class="row g-2 mt-3">
+                      <div class="col">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" id="manualStartDate" class="form-control">
+                      </div>
+                      <div class="col">
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="manualEndDate" class="form-control">
+                      </div>
+                    </div>
+
+                    <!-- AUTOMATION RULES inside MANUAL -->
+                    <h6 class="mt-3">Manual Automation Rules</h6>
+                    <div id="manualRuleContainer"></div>
+
+                    <button class="btn btn-outline-warning btn-sm mt-2" onclick="addManualRule()">➕ Add Rule</button>
+
+                    <hr class="mt-4 mb-3">
+
+                    <h6 class="mt-4">Conditional Multi-Mapping</h6>
+
+                    <div id="multiMapContainer"></div>
+
+                    <button class="btn btn-outline-info btn-sm mt-2" onclick="addMultiMapRule()">
+                      ➕ Add Multi Map Rule
+                    </button>
+
+                    <hr class="mt-4 mb-3">
+                    <!-- FIELD MAPPING -->
+                    <label class="form-label">Field Mapping</label>
+
+                    <div id="mappingContainer"></div>
+
+                    <button class="btn btn-outline-light btn-sm mt-2" onclick="addMappingRow()">
+                      ➕ Add Mapping
+                    </button>
+
+                    <hr class="mt-4 mb-3">
+
+                    <button type="button" class="btn btn-success w-100" id="btnManualSend">📤 Send Manually</button>
+
+                  </div>
+                  <!-- SENDING MODAL -->
+                  <div class="modal fade" id="sendingModal" data-bs-backdrop="static" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-body text-center p-4">
+                          <div class="spinner-border text-primary mb-3" role="status"></div>
+                          <h5 id="sendStatus">Initializing...</h5>
+                          <div id="sendLogs" class="mt-3 text-start small text-muted border p-2 rounded"
+                            style="height: 150px; overflow-y: auto; background:#f8f9fa;"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CONTROL BUTTONS -->
+                  <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-warning w-100" onclick="stopSend()">⛔ Stop</button>
+                    <button class="btn btn-info w-100" onclick="resumeSend()">▶️ Resume</button>
+                    <button class="btn btn-danger w-100" onclick="cancelSend()">🛑 Cancel</button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================= -->
+            <!--     TAB 2 - AUTOMATION   -->
+            <!-- ======================= -->
+            <div class="tab-pane fade" id="automation">
+
+              <div class="mb-3">
+                <label class="form-label">Google Sheet URL</label>
+                <input type="text" id="autoSheetUrl" class="form-control"
+                  placeholder="https://docs.google.com/spreadsheets/...">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Sheet Name (Tab Name)</label>
+                <input class="form-control" id="autoSheetName" placeholder="Sheet1">
+              </div>
+
+              <!-- SAME MAPPING FOR AUTOMATION -->
+              <label class="form-label">Header Mapping</label>
+              <div id="autoMappingContainer"></div>
+
+              <button class="btn btn-outline-light btn-sm mt-2" onclick="addAutoMappingRow()">
+                ➕ Add Mapping
+              </button>
+
+              <hr class="my-3">
+
+              <h6>Automation Rules</h6>
+
+              <div id="ruleContainer"></div>
+
+              <button class="btn btn-outline-warning btn-sm mt-2" onclick="addAutomationRule()">
+                ➕ Add Rule
+              </button>
+              <h6 class="mt-4">🔄 Value Switch Rules</h6>
+
+              <div id="switchContainer"></div>
+
+              <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="addSwitchRow()">
+                ➕ Add Switch Rule
+              </button>
+
+              <div class="mt-3">
+                <label class="form-label">Daily RO (Leads Limit) before 6 PM</label>
+                <input type="number" id="dailyRo" class="form-control" placeholder="20">
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label">Trigger Interval</label>
+                <select id="autoTriggerInterval" class="form-select">
+                  <option value="1">Every 1 min</option>
+                  <option value="2">Every 2 min</option>
+                  <option value="5">Every 5 min</option>
+                  <option value="10">Every 10 min</option>
+                  <option value="15">Every 15 min</option>
+                  <option value="30">Every 30 min</option>
+                  <option value="60">Every 1 hour</option>
+                </select>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label">Campaign Name</label>
+                <input type="text" id="autoCampaignName" class="form-control" placeholder="Delhi MBA Automation">
+              </div>
+
+              <hr class="my-4">
+
+              <button class="btn btn-warning w-100" onclick="saveAutomation()">
+                🚀 Start Automation
+              </button>
+
+            </div> <!-- End #automation -->
+
+          </div> <!-- End .tab-content -->
+        </div> <!-- End .col-md-9 -->
+      </div> <!-- End .row -->
+    </div> <!-- End .container-fluid -->
+  </div> <!-- End .modal-body -->
+  </div> <!-- End .modal-content -->
+  </div> <!-- End .modal-dialog -->
+  </div> <!-- End #sheetModal -->
+  <div class="modal fade" id="controlSheetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-light">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Load From Control Sheet</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <label class="form-label">Control Sheet URL</label>
+          <input type="text" id="controlSheetUrl" class="form-control" placeholder="Paste Control Sheet Link">
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-success" onclick="applyControlSheet()">Apply</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script>
+    window.EDIT_MAPPINGS = window.EDIT_MAPPINGS || [];
+    window.EDIT_RULES = window.EDIT_RULES || [];
+    window.EDIT_SHEET_URL = window.EDIT_SHEET_URL || "";
+    window.EDIT_SHEET_NAME = window.EDIT_SHEET_NAME || "";
+    window.EDIT_INTERVAL = window.EDIT_INTERVAL || "";
+    window.EDIT_NAME = window.EDIT_NAME || "";
+    window.EDIT_DAILY_RO = window.EDIT_DAILY_RO || "";
+    // 🔥 CACHE distinct values per column
+    const DISTINCT_CACHE = {};
+    function openSheetModal() {
+      const modal = new bootstrap.Modal(document.getElementById("sheetModal"));
+      modal.show();
+      const EDIT_SHEET_URL = window.EDIT_SHEET_URL || "";
+      const EDIT_SHEET_NAME = window.EDIT_SHEET_NAME || "";
+      const EDIT_INTERVAL = window.EDIT_INTERVAL || "";
+      const EDIT_NAME = window.EDIT_NAME || "";
+      const EDIT_DAILY_RO = window.EDIT_DAILY_RO || "";
+      if (EDIT_SHEET_URL) {
+        document.getElementById("autoSheetUrl").value = EDIT_SHEET_URL;
+      }
+      if (EDIT_SHEET_NAME) {
+        document.getElementById("autoSheetName").value = EDIT_SHEET_NAME;
+      }
+      if (EDIT_INTERVAL) {
+        document.getElementById("autoTriggerInterval").value = EDIT_INTERVAL;
+      }
+      if (EDIT_NAME) {
+        document.getElementById("autoCampaignName").value = EDIT_NAME;
+      }
+      if (EDIT_DAILY_RO) {
+        document.getElementById("dailyRo").value = EDIT_DAILY_RO;
+      }
+
+      // Load previous mappings
+      loadEditMappings();
+      loadEditRules();
+    }
+
+    function addMappingRow() {
+      const container = document.getElementById("mappingContainer");
+      let master = document.getElementById("masterColumnsTemplate").innerHTML;
+
+
+      const row = document.createElement("div");
+      row.className = "row g-2 mapping-row mb-2";
+
+      row.innerHTML = `
+    <div class="col">
+        <select class="form-select table-field">
+            <option value="">-- Select Field --</option>
+            ${master}
+        </select>
+    </div>
+
+    <div class="col">
+        <input class="form-control sheet-field" placeholder="Sheet Header">
+        
+        <input class="form-control mt-1 static-value" 
+               placeholder="Static Value (optional)">
+        
+        <div class="form-check mt-1">
+            <input class="form-check-input dedupe-check" type="checkbox">
+            <label class="form-check-label small">Prevent duplicate</label>
+        </div>
+    </div>
+
+    <div class="col-auto">
+        <button class="btn btn-danger" onclick="removeMapping(this)">✕</button>
+    </div>
+`;
+
+      container.appendChild(row);
+    }
+
+    function loadEditMappings() {
+      if (!EDIT_MAPPINGS || EDIT_MAPPINGS.length === 0) return;
+
+      EDIT_MAPPINGS.forEach(m => {
+        addAutoMappingRow();
+
+        const rows = document.querySelectorAll("#autoMappingContainer .mapping-row");
+        const row = rows[rows.length - 1];
+
+        row.querySelector(".table-field").value = m.tableField;
+        row.querySelector(".sheet-field").value = m.sheetField;
+      });
+    }
+
+    function loadEditRules() {
+      if (!EDIT_RULES || EDIT_RULES.length === 0) return;
+
+      EDIT_RULES.forEach(rule => {
+        addAutomationRule();
+
+        const boxes = document.querySelectorAll("#ruleContainer .p-2");
+        const box = boxes[boxes.length - 1];
+
+        const select = box.querySelector(".auto-rule-field");
+        [...select.options].forEach(opt => {
+          if (norm(opt.innerText || opt.value) === norm(rule.field)) {
+            opt.selected = true;
+          }
+        });
+
+        loadRuleValues(select); // load values
+
+        setTimeout(() => {
+          // After values loaded → tick them
+          (rule.values || []).forEach(v => {
+            let cb =
+              box.querySelector(`.manual-value-check[value="${v}"]`) ||
+              box.querySelector(`.rule-value-check[value="${v}"]`);
+
+            if (cb) cb.checked = true;
+          });
+        }, 300);
+      });
+    }
+    function removeMapping(btn) {
+      btn.closest(".mapping-row").remove();
+    }
+    function addLog(msg) {
+      const logBox = document.getElementById("sendLogs");
+      const time = new Date().toLocaleTimeString();
+      logBox.innerHTML += `[${time}] ${msg}<br>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+    async function sendToSheet(configOverride = null) {
+
+      // If override provided (from loop), use it. Else read from DOM.
+      const sheetUrl = configOverride?.sheetUrl || document.getElementById("sheetUrl").value.trim();
+      const sheetName = configOverride?.sheetName || document.getElementById("manualSheetName").value.trim();
+      const dailyRo = configOverride?.daily_ro || document.getElementById("manualDailyRo").value || null;
+      const startDate = configOverride?.start_date || document.getElementById("manualStartDate").value || null;
+      const endDate = configOverride?.end_date || document.getElementById("manualEndDate").value || null;
+      if (!sheetUrl) return alert("Paste Google Sheet URL");
+
+      // SHOW LOADING MODAL
+      const sendingModal = new bootstrap.Modal(document.getElementById("sendingModal"));
+      sendingModal.show();
+      document.getElementById("sendStatus").innerText = "Sending leads... Please wait";
+
+      // RESET LOG VIEW
+      document.getElementById("sendLogs").innerHTML = "";
+      addLog("🚀 Sending started...");
+
+      // ----------------------------
+      // 📌 BUILD PAYLOAD (unchanged)
+      // ----------------------------
+
+      const selectedIds = Array.from(
+        document.querySelectorAll(".row-select:checked")
+      ).map(cb => cb.value);
+
+      const mappings = [];
+      document.querySelectorAll("#mappingContainer .mapping-row").forEach(row => {
+        const tableField = row.querySelector(".table-field").value;
+        const sheetField = row.querySelector(".sheet-field").value.trim();
+        const staticValue = row.querySelector(".static-value").value.trim();
+
+        if (sheetField) {
+          mappings.push({
+            tableField: tableField || "",
+            sheetField: sheetField || "",
+            staticValue: staticValue || ""
+          });
+        }
+      });
+
+      const manualRules = [];
+
+      document.querySelectorAll("#manualRuleContainer .manual-rule-box").forEach(box => {
+        const fieldSelect = box.querySelector(".manual-rule-field");
+        if (!fieldSelect) return;
+
+        const field = fieldSelect.value?.trim();
+        if (!field) return;
+
+        const values = [];
+        box.querySelectorAll(".manual-value-check").forEach(cb => {
+          if (cb.checked) values.push(cb.value);
+        });
+
+        if (values.length > 0) {
+          manualRules.push({
+            field: field,
+            value: values
+          });
+        }
+      });
+
+      // --- CLEAN MULTI-MAPS BUILDER ---
+      const multiMaps = [];
+
+      document.querySelectorAll("#multiMapContainer .p-2").forEach(box => {
+        const field = box.querySelector(".mm-field")?.value;
+        const match = box.querySelector(".mm-match")?.value.trim();
+
+        const outputs = [];
+
+        box.querySelectorAll(".mm-output-box .row").forEach(out => {
+          const h = out.querySelector(".mm-out-header")?.value.trim();
+          const v = out.querySelector(".mm-out-value")?.value.trim();
+          if (h && v) outputs.push({ header: h, value: v });
+        });
+
+        if (field && match && outputs.length)
+          multiMaps.push({ field, match, outputs });
+      });
+
+      const payload = {
+        sheetUrl,
+        ctids: selectedIds,
+        mappings,
+        multiMaps,
+        automationRules: manualRules,
+        dailyRo,
+        startDate,
+        dailyRo,
+        startDate,
+        endDate,
+        sheetName
+      };
+
+      addLog("📦 Payload prepared.");
+      addLog("➡ Sending request to server...");
+
+      // -------------------------------------
+      // ⭐ STREAMING FETCH (REAL-TIME LOGS)
+      // -------------------------------------
+      const response = await fetch("/send-to-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      // ⭐ NEW WORKING STREAM READER ⭐
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader();
+
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        addLog(value);
+      }
+      // ⭐ AUTO CLOSE WHEN FINISHED ⭐
+      if (document.getElementById("sendLogs").innerText.includes("Completed all rows")) {
+        document.getElementById("sendStatus").innerText = "Completed!";
+
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(document.getElementById("sendingModal"));
+          if (modal) modal.hide();
+        }, 1200);
+      }
+
+
+      addLog("✔ Completed streaming.");
+
+      // ⭐ AUTO CLOSE WHEN FINISHED ⭐
+      if (document.getElementById("sendLogs").innerText.includes("Completed all rows")) {
+        document.getElementById("sendStatus").innerText = " Completed!";
+
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(document.getElementById("sendingModal"));
+          if (modal) modal.hide();
+        }, 1200);
+      }
+
+      // OPTIONAL AUTO CLOSE
+      setTimeout(() => {
+        addLog("🎉 All done!");
+      }, 500);
+
+    }
+    window.sendToSheet = sendToSheet;
+    console.log("🔥 sendToSheet() is now GLOBAL");
+    // 🔥 GLOBAL CLICK HANDLER FOR MANUAL SEND BUTTON
+    // 🔥 WORKING GLOBAL CLICK HANDLER USING closest()
+
+
+    function addAutomationRule() {
+      let master = document.getElementById("masterColumnsTemplate").innerHTML;
+
+
+      const ruleBox = document.createElement("div");
+      ruleBox.className = "manual-rule-box border rounded mb-3";
+
+      ruleBox.innerHTML = `
+      <div class="row g-2">
+        <div class="col">
+          <label class="form-label small">Column</label>
+          <select class="form-select auto-rule-field"
+        onchange="loadRuleValues(this)">
+            <option value="">Select column</option>
+            ${master}
+          </select>
+        </div>
+  
+        <div class="col">
+          <label class="form-label small">Values</label>
+  
+          <!-- Container where we show checkboxes -->
+          <div class="value-box border rounded p-2" style="height:120px; overflow:auto;">
+            <div class="text-muted small">Select column first</div>
+          </div>
+        </div>
+  
+        <div class="col-auto">
+          <button class="btn btn-danger mt-4"
+                  onclick="this.closest('.manual-rule-box').remove()">✕</button>
+        </div>
+      </div>
+    `;
+
+      document.getElementById("ruleContainer").appendChild(ruleBox);
+    }
+
+    function loadRuleValues(selectEl) {
+      const realValue = selectEl.value; // REAL DB column
+      const wrapper = selectEl.closest(".row").querySelector(".value-box");
+
+      if (!realValue) {
+        wrapper.innerHTML = `<div class="text-muted small">Select column first</div>`;
+        return;
+      }
+
+      wrapper.innerHTML = `<div class="text-muted small">Loading...</div>`;
+
+      // 🔥 This is the ONLY correct fetch
+      fetch(`/api/distinct/${encodeURIComponent(realValue)}`)
+        .then(r => r.json())
+        .then(values => {
+          if (!values || values.length === 0) {
+            wrapper.innerHTML = `<div class="text-muted small">No values</div>`;
+            return;
+          }
+
+          wrapper.innerHTML = values
+            .map((v, i) => `
+                    <div class="form-check">
+                        <input class="form-check-input rule-value-check" type="checkbox" id="${realValue}_${i}" value="${v}">
+                        <label class="form-check-label small" for="${realValue}_${i}">
+                            ${v}
+                        </label>
+                    </div>
+                `)
+            .join("");
+        });
+    }
+
+
+    function addAutoMappingRow() {
+      const container = document.getElementById("autoMappingContainer");
+      let master = document.getElementById("masterColumnsTemplate").innerHTML;
+
+
+      const row = document.createElement("div");
+      row.className = "row g-2 mapping-row mb-2";
+
+      row.innerHTML = `
+      <div class="col">
+        <select class="form-select table-field">
+          ${master}
+        </select>
+      </div>
+  
+      <div class="col">
+        <input class="form-control sheet-field" placeholder="Sheet Header Name">
+      </div>
+  
+      <div class="col-auto">
+        <button class="btn btn-danger" onclick="this.closest('.mapping-row').remove()">✕</button>
+      </div>
+    `;
+
+      container.appendChild(row);
+    }
+    function cleanHTML(html) {
+      return html
+        .replace(/[\n\r\t]/g, "")   // remove newlines/tabs
+        .replace(/\s{2,}/g, " ")    // collapse spaces
+        .trim();
+    }
+    function addManualRule() {
+      const tplHTML = document.getElementById("masterColumnsTemplate").innerHTML;
+
+      const ruleBox = document.createElement("div");
+      ruleBox.className = "manual-rule-box border rounded mb-3";
+
+      ruleBox.innerHTML = `
+      <div class="row g-2">
+        <div class="col">
+          <label class="form-label small">Column</label>
+          <select class="form-select manual-rule-field">
+            <option value="">Select column</option>
+            ${tplHTML}
+          </select>
+        </div>
+
+        <div class="col">
+          <label class="form-label small">Values</label>
+          <div class="manual-value-box border rounded p-2" 
+               style="height:120px; overflow:auto;">
+            <div class="text-muted small">Select column first</div>
+          </div>
+        </div>
+
+        <div class="col-auto">
+          <button class="btn btn-danger mt-4"
+                  onclick="this.closest('.manual-rule-box').remove()">✕</button>
+        </div>
+      </div>
+    `;
+
+      document.getElementById("manualRuleContainer").appendChild(ruleBox);
+
+      ruleBox.querySelector(".manual-rule-field")
+        .addEventListener("change", function () {
+          loadManualRuleValues(this);
+        });
+    }
+
+    async function loadManualRuleValues(selectEl) {
+      const realCol = selectEl.value;
+      const box = selectEl.closest(".row").querySelector(".manual-value-box");
+
+      if (!realCol) {
+        box.innerHTML = `<div class="text-muted small">Select column first</div>`;
+        return;
+      }
+
+      // ⭐ FAST: If already cached → use instantly
+      if (DISTINCT_CACHE[realCol]) {
+        renderManualValues(box, DISTINCT_CACHE[realCol]);
+        return;
+      }
+
+      // FIRST TIME → fetch from backend
+      box.innerHTML = "Loading...";
+
+      const values = await fetch(`/api/distinct/${encodeURIComponent(selectEl.value)}`)
+        .then(r => r.json())
+        .catch(() => []);
+
+      DISTINCT_CACHE[realCol] = values; // ⭐ cache permanently
+
+      renderManualValues(box, values);
+    }
+
+    function renderManualValues(box, values) {
+      if (!values.length) {
+        box.innerHTML = `<div class="text-muted small">No values</div>`;
+        return;
+      }
+
+      box.innerHTML = values
+        .map(v => `
+        <div class="form-check">
+            <input class="form-check-input manual-value-check" type="checkbox" value="${v}">
+            <label class="form-check-label small">${v}</label>
+        </div>
+      `)
+        .join("");
+    }
+
+    function saveAutomation() {
+
+      const sheetUrl = document.getElementById("autoSheetUrl").value.trim();
+      const interval = document.getElementById("autoTriggerInterval").value;
+      const campaignName = document.getElementById("autoCampaignName").value.trim();
+      const dailyRo = document.getElementById("dailyRo").value;
+
+      const rules = [];
+
+      document.querySelectorAll("#ruleContainer .p-2").forEach(box => {
+        const selectEl = box.querySelector(".auto-rule-field");
+        if (!selectEl || selectEl.selectedOptions.length === 0) return;
+
+        const field = selectEl.selectedOptions[0].dataset.real;
+
+        const values = Array.from(
+          box.querySelectorAll(".rule-value-check:checked")
+        ).map(cb => cb.value);
+
+        if (field && values.length > 0) {
+          rules.push({ field, values });
+        }
+      });
+
+      const mappings = [];
+      document.querySelectorAll("#autoMappingContainer .mapping-row").forEach(row => {
+        const tableField = row.querySelector(".table-field").value;
+        const sheetField = row.querySelector(".sheet-field").value.trim();
+        if (sheetField) {
+          const staticValue = row.querySelector(".static-value")?.value.trim() || "";
+          mappings.push({
+            tableField: tableField || "",
+            sheetField: sheetField || "",
+            staticValue: staticValue || ""
+          });
+        }
+      });
+      const switchRules = [];
+
+      document.querySelectorAll("#switchContainer .p-2").forEach(box => {
+        const field = box.querySelector(".switch-field").value;
+        const old_value = box.querySelector(".switch-old").value.trim();
+        const new_value = box.querySelector(".switch-new").value.trim();
+
+        if (field && old_value && new_value) {
+          switchRules.push({ field, old_value, new_value });
+        }
+      });
+      fetch("/save-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: campaignName,
+          sheetUrl,
+          sheetName: document.getElementById("autoSheetName").value.trim(),
+          triggerInterval: interval,
+          mappings,
+          automationRules: rules,
+          switchRules: switchRules,    // <-- NEW
+          dailyRo
+        })
+      })
+        .then(r => r.json())
+        .then(res => {
+          alert("Automation Saved!");
+
+          // ⭐⭐ CLOSE MODAL AUTOMATICALLY ⭐⭐
+          const modalEl = document.getElementById("sheetModal");
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+
+          // Start Background Trigger
+          startBackgroundTrigger(res.id, interval);
+        });
+
+    }
+
+
+
+
+
+
+    function setTrigger() {
+      const sheetUrl = document.getElementById("sheetUrl").value.trim();
+      const interval = document.getElementById("triggerInterval").value;
+      const campaignName = document.getElementById("campaignName").value.trim();
+
+      if (!sheetUrl) return alert("Enter sheet URL");
+      if (!campaignName) return alert("Enter campaign name");
+
+      if (interval == 0) return alert("Choose interval greater than 0");
+
+      const selectedIds = Array.from(document.querySelectorAll(".row-select:checked"))
+        .map(cb => cb.value);
+
+      const mappings = [];
+      document.querySelectorAll(".mapping-row").forEach(row => {
+        const tableField = row.querySelector(".table-field").value;
+        const sheetField = row.querySelector(".sheet-field").value.trim();
+        if (sheetField) {
+          const staticValue = row.querySelector(".static-value")?.value.trim() || "";
+          mappings.push({
+            tableField: tableField || "",
+            sheetField: sheetField || "",
+            staticValue: staticValue || ""
+          });
+        }
+      });
+
+      const query = window.location.search || "";
+
+      fetch("/save-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: campaignName,
+          query: query,
+          mappings: mappings,
+          sheetUrl: sheetUrl,
+          triggerInterval: interval
+        })
+      })
+        .then(r => r.json())
+        .then(res => {
+          alert("Campaign Saved! Trigger will start running.");
+          startBackgroundTrigger(res.id, interval);
+        });
+    }
+
+    function startBackgroundTrigger(id, interval) {
+      fetch("/start-trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, interval })
+      })
+        .then(r => r.json())
+        .then(res => alert(res.message));
+    }
+  </script>
+  <script>
+    function filterOptions(inputEl) {
+      const term = inputEl.value.toLowerCase().trim();
+
+      // Find the filter-body container
+      const body = inputEl.closest(".filter-body");
+
+      // Select all checkboxes inside this filter section
+      const checks = body.querySelectorAll(".form-check");
+
+      checks.forEach(check => {
+        const label = check.querySelector(".form-check-label").innerText.toLowerCase();
+
+        // Show only matching values
+        if (label.includes(term)) {
+          check.style.display = "";
+        } else {
+          check.style.display = "none";
+        }
+      });
+    }
+    function addSwitchRow(data = null) {
+      const master = document.getElementById("masterColumnsTemplate").innerHTML;
+
+      const box = document.createElement("div");
+      box.className = "p-2 border rounded mb-2";
+
+      box.innerHTML = `
+        <div class="row g-2">
+        
+          <!-- FIELD -->
+          <div class="col-md-3">
+            <label class="small form-label">Field</label>
+            <select class="form-select switch-field">
+              ${master}
+            </select>
+          </div>
+    
+          <!-- ORIGINAL VALUE -->
+          <div class="col-md-3">
+            <label class="small form-label">Original</label>
+            <input class="form-control switch-old" placeholder="Old Value">
+          </div>
+    
+          <!-- NEW VALUE -->
+          <div class="col-md-3">
+            <label class="small form-label">New Value</label>
+            <input class="form-control switch-new" placeholder="New Value">
+          </div>
+    
+          <div class="col-auto d-flex align-items-end">
+            <button class="btn btn-danger btn-sm"
+                    onclick="this.closest('.manual-rule-box').remove()">✕</button>
+          </div>
+    
+        </div>
+      `;
+
+      if (data) {
+        box.querySelector(".switch-field").value = data.field;
+        box.querySelector(".switch-old").value = data.old_value;
+        box.querySelector(".switch-new").value = data.new_value;
+      }
+
+      document.getElementById("switchContainer").appendChild(box);
+    }
+
+    // --- CLEAN MULTI-MAP RULE UI ---
+    function addMultiMapRule() {
+      let master = document.getElementById("masterColumnsTemplate").innerHTML;
+
+
+      const box = document.createElement("div");
+      box.className = "p-2 border rounded mb-3";
+
+      box.innerHTML = `
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="small form-label">DB Field</label>
+        <select class="form-select mm-field">
+          <option value="">Select</option>
+          ${master}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="small form-label">Match</label>
+        <input class="form-control mm-match" placeholder="MBA">
+      </div>
+
+      <div class="col-md-4">
+        <label class="small form-label">Outputs</label>
+
+        <div class="mm-output-box"></div>
+
+        <button class="btn btn-outline-light btn-sm mt-1"
+                onclick="addMultiOutput(this)">
+            ➕ Add Output
+        </button>
+      </div>
+
+      <div class="col-auto d-flex align-items-end">
+        <button class="btn btn-danger btn-sm"
+                onclick="this.closest('.p-2').remove()">✕</button>
+      </div>
+    </div>
+  `;
+
+      document.getElementById("multiMapContainer").appendChild(box);
+    }
+
+    function addMultiOutput(btn) {
+      const box = btn.parentElement.querySelector(".mm-output-box");
+
+      const div = document.createElement("div");
+      div.className = "row g-1 mb-2";
+
+      div.innerHTML = `
+      <div class="col">
+        <input class="form-control mm-out-header" placeholder="Sheet Header">
+      </div>
+
+      <div class="col">
+        <input class="form-control mm-out-value" placeholder="Value">
+      </div>
+
+      <div class="col-auto">
+        <button class="btn btn-danger btn-sm"
+                onclick="this.closest('.row').remove()">✕</button>
+      </div>
+  `;
+
+      box.appendChild(div);
+    }
+    function stopSend() {
+      fetch("/send-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "stop" })
+      })
+        .then(() => {
+          document.querySelector("#sendingModal h5").innerText = "⏸️ Sending paused";
+        });
+    }
+
+    function resumeSend() {
+      document.querySelector("#sendingModal h5").innerText = "▶️ Resuming...";
+
+      fetch("/send-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume" })
+      });
+    }
+
+    function cancelSend() {
+      fetch("/send-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" })
+      })
+        .then(() => {
+          document.querySelector("#sendingModal h5").innerText = "❌ Sending cancelled";
+          setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById("sendingModal"));
+            modal.hide();
+          }, 800);
+        });
+    }
+
+    function openControlSheetModal() {
+      const modal = new bootstrap.Modal(document.getElementById("controlSheetModal"));
+      modal.show();
+    }
+    function norm(s) {
+      return (s || "")
+        .replace(/\u00A0/g, " ")   // replace NO-BREAK SPACE
+        .replace(/\u200B/g, "")    // remove ZERO-WIDTH SPACE
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+
+
+
+    // ==========================================
+    // 🔄 RENDER CONFIG FUNCTION (Replaces body of applyControlSheet)
+    // ==========================================
+    // 🔥 CAMPAIGN QUEUE GLOBAL
+    window.CAMPAIGN_QUEUE = [];
+
+    async function renderCampaignConfig(data) {
+      console.log("⚙ Rendering configuration for Campaign:", data.campaign_id);
+
+      // 1️⃣ DATE + SIMPLE FIELDS
+      const fixDate = d => {
+        if (!d) return "";
+        d = d.toString().trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+        if (d.includes("T")) return d.split("T")[0];
+        const p = d.split("/");
+        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+        return "";
+      };
+
+      document.getElementById("sheetUrl").value = data.sheet_url || "";
+      document.getElementById("manualSheetName").value = data.sheet_name || "";
+      // also populate auto fields
+      document.getElementById("autoSheetUrl").value = data.sheet_url || "";
+      document.getElementById("autoSheetName").value = data.sheet_name || "";
+
+      document.getElementById("manualDailyRo").value = data.daily_ro || "";
+      document.getElementById("manualStartDate").value = fixDate(data.start_date);
+      document.getElementById("manualEndDate").value = fixDate(data.end_date);
+
+      // 2️⃣ MANUAL RULES
+      document.getElementById("manualRuleContainer").innerHTML = "";
+      // Also clear switch container (just in case)
+      const switchCont = document.getElementById("switchContainer");
+      if (switchCont) switchCont.innerHTML = "";
+
+      // 3️⃣ CONDITIONAL MULTI-MAPPING
+      document.getElementById("multiMapContainer").innerHTML = "";
+
+      if (data.conditional_multi && data.conditional_multi.length > 0) {
+        data.conditional_multi.forEach(rule => {
+          addMultiMapRule(); // create empty box
+
+          let boxes = document.querySelectorAll("#multiMapContainer .p-2");
+          let box = boxes[boxes.length - 1];
+
+          box.querySelector(".mm-field").value = rule.field;
+          box.querySelector(".mm-match").value = rule.match;
+
+          const outBox = box.querySelector(".mm-output-box");
+          outBox.innerHTML = "";
+
+          rule.outputs.forEach(o => {
+            const div = document.createElement("div");
+            div.className = "row g-1 mb-2";
+            div.innerHTML = `
+                        <div class="col">
+                            <input class="form-control mm-out-header" value="${o.header}">
+                        </div>
+                        <div class="col">
+                            <input class="form-control mm-out-value" value="${o.value}">
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-danger btn-sm" onclick="this.closest('.row').remove()">✕</button>
+                        </div>`;
+            outBox.appendChild(div);
+          });
+        });
+      }
+
+      // 4️⃣ FIELD MAPPING LOADER
+      document.getElementById("mappingContainer").innerHTML = "";
+
+      if (data.field_mapping && data.field_mapping.length > 0) {
+        data.field_mapping.forEach(row => {
+          // Backend now pre-filters, but safety checks don't hurt
+          if (String(row["Status"]).trim().toLowerCase() !== "active") return;
+
+          // Matches current campaign ID (backend ensures this, but good visual check)
+          if (String(row["Campaign ID"]).trim() !== String(data.campaign_id)) return;
+
+          addMappingRow();
+
+          const mappingRows = document.querySelectorAll("#mappingContainer .mapping-row");
+          const ui = mappingRows[mappingRows.length - 1];
+
+          ui.querySelector(".table-field").value = row["Table Field"];
+          ui.querySelector(".sheet-field").value = row["Sheet Header"] || "";
+          ui.querySelector(".static-value").value = row["Static Value"] || "";
+
+          if (String(row["Duplicate Check"]).trim().toLowerCase() === "true") {
+            ui.querySelector(".dedupe-check").checked = true;
+          }
+        });
+      }
+
+      if (!data.auto_rules || data.auto_rules.length === 0) {
+        console.log("✔ No auto rules to render.");
+        return;
+      }
+
+      // Load rules reliably
+      for (const rule of data.auto_rules) {
+        rule.field = rule.field.replace(/^"+|"+$/g, "").trim();
+
+        addManualRule();
+
+        // WAIT for DOM
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+
+        const boxes = document.querySelectorAll("#manualRuleContainer .manual-rule-box");
+        const box = boxes[boxes.length - 1];
+        const fieldSelect = box.querySelector(".manual-rule-field");
+
+        if (!fieldSelect) continue;
+
+        let matchFound = false;
+        for (const opt of fieldSelect.options) {
+          if (norm(opt.innerText) === norm(rule.field)) {
+            fieldSelect.value = opt.value;
+            matchFound = true;
+            break;
+          }
+        }
+
+        if (matchFound) {
+          await loadManualRuleValues(fieldSelect);
+          setTimeout(() => {
+            (rule.values || []).forEach(v => {
+              let cb = box.querySelector(`.manual-value-check[value="${v}"]`) ||
+                box.querySelector(`.rule-value-check[value="${v}"]`);
+              if (cb) cb.checked = true;
+            });
+          }, 200);
+        }
+      }
+    }
+
+
+
+    function closeControlSheetModal() {
+      const modal = bootstrap.Modal.getInstance(document.getElementById("controlSheetModal"));
+      if (modal) modal.hide();
+    }
+
+    /* =========================================
+       UPDATED APPLY CONTROL SHEET
+       ========================================= */
+    async function applyControlSheet() {
+      const url = document.getElementById("controlSheetUrl").value.trim();
+      if (!url) return alert("Paste Control Sheet URL");
+
+      const res = await fetch("/api/load-control-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+
+      // HANDLE MULTI-CAMPAIGN RESPONSE
+      if (data.campaigns && Array.isArray(data.campaigns)) {
+        window.CAMPAIGN_QUEUE = data.campaigns;
+        console.log(`📥 Loaded ${window.CAMPAIGN_QUEUE.length} campaigns into queue.`);
+
+        if (window.CAMPAIGN_QUEUE.length > 0) {
+          // Render FIRST campaign immediately
+          await renderCampaignConfig(window.CAMPAIGN_QUEUE[0]);
+          alert(`✔ Loaded ${window.CAMPAIGN_QUEUE.length} active campaigns!\n\nClick "Send Manually" to process all of them sequentially.`);
+        } else {
+          alert("No active campaigns found in the response.");
+        }
+      } else {
+        // FALLBACK for old format (should generally not happen with new backend)
+        // Just wrap it as one
+        window.CAMPAIGN_QUEUE = [data];
+        await renderCampaignConfig(data);
+        alert("✔ Control Sheet Applied (Single Campaign)");
+      }
+
+      closeControlSheetModal();
+    }
+
+
+    /* =========================================
+       UPDATED MANUAL SEND BUTTON
+       ========================================= */
+    document.getElementById("btnManualSend").onclick = async function () {
+      console.log("🔥 MANUAL SEND CLICKED");
+
+      if (window.CAMPAIGN_QUEUE && window.CAMPAIGN_QUEUE.length > 1) {
+        console.log("🚀 STARTING MULTI-CAMPAIGN SEQUENCE...");
+
+        if (!confirm(`Ready to send leads for ${window.CAMPAIGN_QUEUE.length} campaigns sequentially?`)) return;
+
+        // 🔥 CRITICAL: Uncheck all manually selected rows to prevent "leakage"
+        // If rows are selected, sendToSheet uses them + ignores rules. 
+        // We want pure rule-based automation here.
+        document.querySelectorAll(".row-select:checked").forEach(cb => cb.checked = false);
+
+        for (let i = 0; i < window.CAMPAIGN_QUEUE.length; i++) {
+          const camp = window.CAMPAIGN_QUEUE[i];
+          console.log(`\n▶ Processing Campaign ${i + 1}/${window.CAMPAIGN_QUEUE.length}: ${camp.campaign_id}`);
+
+          // 1. Render Settings
+          await renderCampaignConfig(camp);
+
+          // Give UI a moment to settle/paint
+          await new Promise(r => setTimeout(r, 800));
+
+          // 2. Trigger Send
+          // We await this. It returns when the stream modal is closed (based on our logic below)
+          // BUT sendToSheet() logic we have sets up the modal and returns a PROMISE when done?
+          // The current sendToSheet() is async, but it "returns" when the fetch stream STARTS reading.
+          // We need to wait until it FINISHES.
+
+          // 2. Trigger Send
+          // Wrap sendToSheet call to wait for modal close
+          await new Promise(async (resolve) => {
+
+            // Hack: Override the modal hide logic to resolve our promise
+            // Or simply poll for the modal to disappear
+
+            // 🔥 PASS CONFIG EXPLICITLY TO AVOID DOM RACE CONDITIONS
+            await sendToSheet({
+              sheetUrl: camp.sheet_url,
+              sheetName: camp.sheet_name,
+              daily_ro: camp.daily_ro,
+              start_date: camp.start_date,
+              end_date: camp.end_date
+            });
+
+            // Poll every 500ms to see if modal is still open
+            const checkInterval = setInterval(() => {
+              const modalEl = document.getElementById("sendingModal");
+              // If modal is not shown (class 'show' removed or display none)
+              const isShown = modalEl.classList.contains("show") && modalEl.style.display !== 'none';
+
+              // Also check if logs say "Completed" just in case
+              const logs = document.getElementById("sendLogs").innerText;
+
+              if (!isShown && logs.includes("Completed")) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 500);
+          });
+
+          console.log(`✅ Campaign ${camp.campaign_id} Completed.`);
+          // Small delay between campaigns
+          await new Promise(r => setTimeout(r, 1000));
+        }
+
+        alert("🎉 All campaigns processed successfully!");
+
+      } else {
+        // Normal single send
+        sendToSheet();
+      }
+    };
+
+  </script>
+
+  <!-- LEAD DETAIL SIDE PANEL -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="leadDetailCanvas" style="width:500px">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title fw-bold">Lead Details</h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <div id="leadDetailContent"></div>
+    </div>
+    <div class="offcanvas-footer p-3 border-top bg-light">
+      <button class="btn btn-secondary w-100" data-bs-dismiss="offcanvas">Close</button>
+    </div>
+  </div>
+
+  <style>
+    .lead-detail-item {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .lead-detail-item:last-child {
+      border-bottom: none;
+    }
+
+    .lead-detail-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #999;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .lead-detail-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    #leadDetailCanvas {
+      z-index: 1060;
+      /* Higher than some modals */
+    }
+  </style>
+
+  <script>
+    function openLeadDetail(row) {
+      // 1. Get all headers (exclude checkbox/actions if any)
+      const cells = Array.from(row.querySelectorAll("td"));
+
+      // We need the headers list. It's available globally as headers-data json
+      let headers = [];
+      try {
+        headers = JSON.parse(document.getElementById("headers-data").textContent);
+      } catch (e) {
+        console.error("Could not parse headers", e);
+        return;
+      }
+
+      // 2. Build HTML
+      let html = "";
+
+      // Loop through headers and match with cells
+      // Note: First cell is Checkbox, so data starts at index 0 of headers (which maps to cells[loop.index0+1])
+
+      headers.forEach((h, index) => {
+        // The table has a checkbox in the first column, so data cells are +1
+        const cell = row.querySelector(`td[data-col="${index + 1}"]`);
+        const val = cell ? cell.innerText.trim() : "";
+
+        // Skip technical columns if desired
+        if (h === "__ctid") return;
+
+        html += `
+          <div class="lead-detail-item">
+            <span class="lead-detail-label">${h}</span>
+            <span class="lead-detail-value">${val || "<span class='text-muted'>-</span>"}</span>
+          </div>
+        `;
+      });
+
+      document.getElementById("leadDetailContent").innerHTML = html;
+
+      // 3. Show Offcanvas
+      const bsOffcanvas = new bootstrap.Offcanvas(document.getElementById('leadDetailCanvas'));
+      bsOffcanvas.show();
+    }
+  </script>
+
+</body>
+
+</html>

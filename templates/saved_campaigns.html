@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Saved Campaigns</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-dark text-light p-4">
+
+<!-- 🔥 Add HOME Button -->
+<a href="/" class="btn btn-outline-light mb-3">🏠 Go to Home</a>
+
+<h2>📂 Saved Campaigns</h2>
+
+<table class="table table-dark table-striped mt-4">
+<thead>
+<tr>
+  <th>ID</th>
+  <th>Name</th>
+  <th>Sheet URL</th>
+  <th>Interval</th>
+  <th>Actions</th>
+</tr>
+</thead>
+
+<tbody>
+{% for c in campaigns %}
+<tr>
+  <td>{{ c[0] }}</td>
+  <td>{{ c[1] }}</td>
+  <td>{{ c[3] }}</td>
+  <td>{{ c[4] }} mins</td>
+
+  <td>
+    <a href="/saved-campaigns/{{ c[0] }}" class="btn btn-info btn-sm">View</a>
+    <a href="/saved-campaigns/edit/{{ c[0] }}" class="btn btn-warning btn-sm">Edit</a>
+
+    <form action="/saved-campaigns/delete/{{ c[0] }}"
+          method="POST"
+          style="display:inline-block">
+      <button class="btn btn-danger btn-sm"
+              onclick="return confirm('Delete this campaign?')">
+        Delete
+      </button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+</body>
+</html>
